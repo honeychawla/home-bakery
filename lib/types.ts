@@ -98,4 +98,5 @@ export type Settings = {
   currency: string;
   venmo_handle: string | null;
   wechat_id: string | null;
+  sheet_embed_url: string | null;
 };

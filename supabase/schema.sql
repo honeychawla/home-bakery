@@ -10,7 +10,8 @@ create table if not exists settings (
   currency text not null default 'USD',
   venmo_handle text,
   wechat_id text,
-  -- orders placed after this many hours before a pickup slot are flagged late
+  -- publish-to-web URL of your existing Google Sheet, for the in-app view
+  sheet_embed_url text,
   updated_at timestamptz not null default now()
 );
 

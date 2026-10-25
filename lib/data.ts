@@ -10,7 +10,16 @@ import { weekLabelFor } from "./orders";
 export async function getSettings(): Promise<Settings> {
   const supabase = await createClient();
   const { data } = await supabase.from("settings").select("*").eq("id", 1).single();
-  return (data as Settings) ?? { id: 1, bakery_name: "My Bakery", currency: "USD", venmo_handle: null, wechat_id: null };
+  return (
+    (data as Settings) ?? {
+      id: 1,
+      bakery_name: "My Bakery",
+      currency: "USD",
+      venmo_handle: null,
+      wechat_id: null,
+      sheet_embed_url: null,
+    }
+  );
 }
 
 export async function getCatalog(): Promise<{

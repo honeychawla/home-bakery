@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PayBadge from "@/components/PayBadge";
 import OrdersCalendar from "@/components/OrdersCalendar";
-import { getOrders, getWeekLabels } from "@/lib/data";
+import { getOrders, getSettings, getWeekLabels } from "@/lib/data";
 import { money } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +13,11 @@ export default async function OrdersPage({
 }) {
   const { week, filter, view } = await searchParams;
   const calendarView = view === "calendar";
-  const weeks = await getWeekLabels();
+  const sheetView = view === "sheet";
+  const [weeks, settings] = await Promise.all([getWeekLabels(), getSettings()]);
   // Calendar spans weeks, so it always loads all orders.
   const activeWeek = calendarView || week === "all" ? undefined : week ?? weeks[0];
-  let orders = await getOrders(activeWeek);
+  let orders = sheetView ? [] : await getOrders(activeWeek);
   if (!calendarView && filter === "unpaid")
     orders = orders.filter((o) => o.payment_status !== "paid");
 
@@ -38,7 +39,21 @@ export default async function OrdersPage({
             >
               Calendar
             </Link>
+            {settings.sheet_embed_url && (
+              <Link
+                href="/orders?view=sheet"
+                className={`rounded-md px-3 py-1 ${sheetView ? "bg-amber-100 font-semibold text-amber-900" : "text-stone-500"}`}
+              >
+                Sheet
+              </Link>
+            )}
           </div>
+          <Link
+            href="/orders/import"
+            className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-50"
+          >
+            ⬆ Import CSV
+          </Link>
           <Link
             href="/orders/new"
             className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
@@ -48,9 +63,31 @@ export default async function OrdersPage({
         </div>
       </div>
 
+      {sheetView && settings.sheet_embed_url && (
+        <section className="overflow-hidden rounded-2xl border border-amber-100 bg-white">
+          <div className="flex items-center justify-between border-b border-amber-50 px-4 py-2 text-xs text-stone-500">
+            <span>Live view of your connected Google Sheet (read-only).</span>
+            <a
+              href={settings.sheet_embed_url.replace(/\/pubhtml.*$/, "/edit")}
+              target="_blank"
+              rel="noreferrer"
+              className="text-amber-700 underline"
+            >
+              Open in Google Sheets ↗
+            </a>
+          </div>
+          <iframe
+            src={settings.sheet_embed_url}
+            className="h-[70vh] w-full"
+            title="Connected spreadsheet"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        </section>
+      )}
+
       {calendarView && <OrdersCalendar orders={orders} />}
 
-      {!calendarView && (
+      {!calendarView && !sheetView && (
       <>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {[...weeks.slice(0, 4), "all"].map((w) => (

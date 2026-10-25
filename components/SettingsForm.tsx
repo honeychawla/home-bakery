@@ -11,6 +11,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     bakery_name: settings.bakery_name,
     venmo_handle: settings.venmo_handle ?? "",
     wechat_id: settings.wechat_id ?? "",
+    sheet_embed_url: settings.sheet_embed_url ?? "",
   });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -27,6 +28,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         bakery_name: form.bakery_name,
         venmo_handle: form.venmo_handle || null,
         wechat_id: form.wechat_id || null,
+        sheet_embed_url: form.sheet_embed_url || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
@@ -65,6 +67,22 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
             onChange={(e) => setForm({ ...form, wechat_id: e.target.value })}
             className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
           />
+        </label>
+        <label className="block text-sm">
+          <span className="text-xs font-semibold text-stone-500">
+            Google Sheet embed URL (optional)
+          </span>
+          <input
+            value={form.sheet_embed_url}
+            onChange={(e) => setForm({ ...form, sheet_embed_url: e.target.value })}
+            placeholder="https://docs.google.com/spreadsheets/d/…/pubhtml?widget=true"
+            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
+          />
+          <span className="mt-1 block text-[11px] leading-snug text-stone-400">
+            In Google Sheets: File → Share → Publish to web → Embed, copy the URL from the
+            iframe code. Adds a live &quot;Sheet&quot; view on the Orders page. Note: published
+            sheets are viewable by anyone with the URL.
+          </span>
         </label>
         <button
           onClick={save}
