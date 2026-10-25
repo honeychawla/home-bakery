@@ -50,6 +50,7 @@ export type Order = {
   id: string;
   order_num: string;
   source: string;
+  channel?: string | null; // where the order came from (Instagram, WeChat, ...); absent until the inquiry migration is applied
   customer_id: string | null;
   status: "confirmed" | "ready" | "completed" | "cancelled" | "no_show";
   payment_status: "unpaid" | "deposit" | "paid" | "refunded";
@@ -66,6 +67,16 @@ export type Order = {
   notes: string | null;
   placed_at: string;
   order_items?: OrderItem[];
+};
+
+export type Inquiry = {
+  id: string;
+  channel: string;
+  contact: string | null;
+  note: string | null;
+  status: "open" | "ordered" | "lost";
+  order_id: string | null;
+  created_at: string;
 };
 
 export type PickupSlot = {

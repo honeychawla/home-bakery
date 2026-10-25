@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { summarize, weekStats, type InsightOrder } from "@/lib/insights";
-import { mockSourcesForWeek, PLATFORMS, type Platform } from "@/lib/mockSources";
+import { CHANNELS, UNTRACKED } from "@/lib/channels";
+import { realSourcesForWeek, type FunnelRow, type InsightInquiry } from "@/lib/funnel";
+import { mockSourcesForWeek, PLATFORMS } from "@/lib/mockSources";
 
 type MetricId = "sales" | "cost" | "profit" | "orders" | "tarts" | "unpaid";
 
@@ -15,7 +17,13 @@ const compact = (n: number) =>
 
 const ORDERS_PREVIEW = 3;
 
-export default function InsightsDashboard({ orders }: { orders: InsightOrder[] }) {
+export default function InsightsDashboard({
+  orders,
+  inquiries,
+}: {
+  orders: InsightOrder[];
+  inquiries: InsightInquiry[] | null;
+}) {
   const weeks = useMemo(() => weekStats(orders), [orders]);
   const latest = weeks.at(-1)?.label ?? null;
 
@@ -23,6 +31,8 @@ export default function InsightsDashboard({ orders }: { orders: InsightOrder[] }
   const [selected, setSelected] = useState<string | null>(null); // null = all weeks
   const [ordersWeek, setOrdersWeek] = useState<string | null>(latest); // Orders list starts on the latest week
   const [ordersOpen, setOrdersOpen] = useState(false);
+  // real funnel once anyone has logged an inquiry or tagged an order; sample data until then
+  const realFunnel = inquiries !== null && (inquiries.length > 0 || orders.some((o) => o.channel));
 
   if (weeks.length === 0) {
     return (
@@ -188,7 +198,14 @@ export default function InsightsDashboard({ orders }: { orders: InsightOrder[] }
         />
       </section>
 
-      <SourcesPanel weeks={weeks} selected={selected} onPickWeek={pickWeek} />
+      <SourcesPanel
+        weeks={weeks}
+        selected={selected}
+        onPickWeek={pickWeek}
+        sample={!realFunnel}
+        channels={realFunnel ? [...CHANNELS, ...(orders.some((o) => !o.channel) ? [UNTRACKED] : [])] : [...PLATFORMS]}
+        rowsForWeek={realFunnel ? (w) => realSourcesForWeek(w, inquiries!) : mockSourcesForWeek}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-amber-100 bg-white p-4">
@@ -354,6 +371,7 @@ function WeekChart<W extends { label: string }>({
   selected,
   onPick,
   tooltip,
+  maxValue,
 }: {
   weeks: W[];
   get: (w: W) => number;
@@ -361,6 +379,7 @@ function WeekChart<W extends { label: string }>({
   selected: string | null;
   onPick: (label: string) => void;
   tooltip: (w: W) => string;
+  maxValue?: number; // fixed top of the axis (e.g. 100 for percentages)
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
@@ -379,7 +398,7 @@ function WeekChart<W extends { label: string }>({
   const slot = (width - left - right) / weeks.length;
   const bw = Math.min(56, slot * 0.6);
   const values = weeks.map(get);
-  const step = niceStep(Math.max(1, ...values) / 4);
+  const step = maxValue ? maxValue / 4 : niceStep(Math.max(1, ...values) / 4);
   const topVal = step * 4;
   const short = weeks.length > 8 && width < 700; // keep labels from colliding on narrow screens
 
@@ -458,24 +477,30 @@ function WeekChart<W extends { label: string }>({
 
 // Where orders come from and where people drop off before paying.
 // Pick a channel, then a card, to see that number week by week.
-// Currently driven by MOCK data (lib/mockSources.ts).
+// Real data from the inquiry log (lib/funnel.ts) once it has entries, otherwise sample data (lib/mockSources.ts).
 type SourceMetric = "inquiries" | "paid" | "conversion";
 
 function SourcesPanel({
   weeks,
   selected,
   onPickWeek,
+  sample,
+  channels,
+  rowsForWeek,
 }: {
   weeks: ReturnType<typeof weekStats>;
   selected: string | null;
   onPickWeek: (label: string | null) => void;
+  sample: boolean;
+  channels: string[];
+  rowsForWeek: (w: ReturnType<typeof weekStats>[number]) => FunnelRow[];
 }) {
-  const [channel, setChannel] = useState<Platform | null>(null);
+  const [channel, setChannel] = useState<string | null>(null);
   const [metric, setMetric] = useState<SourceMetric>("conversion");
 
   // inquiries / paid per week for the chosen channel (all channels when none is chosen)
   const perWeek = weeks.map((w) => {
-    const rows = mockSourcesForWeek(w).filter((r) => !channel || r.platform === channel);
+    const rows = rowsForWeek(w).filter((r) => !channel || r.platform === channel);
     const inquiries = rows.reduce((s, r) => s + r.inquiries, 0);
     const paid = rows.reduce((s, r) => s + r.paid, 0);
     return { label: w.label, inquiries, paid, conversion: inquiries ? (paid / inquiries) * 100 : 0 };
@@ -502,13 +527,19 @@ function SourcesPanel({
         <h2 className="text-sm font-bold text-stone-600">
           Conversion &amp; sources <span className="font-normal text-stone-400">· {selected ?? "all weeks"}</span>
         </h2>
-        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-500">
-          Sample data — real tracking not connected yet
-        </span>
+        {sample ? (
+          <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-500">
+            Sample data — log inquiries on the Inquiries page to see yours
+          </span>
+        ) : (
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800">
+            From your inquiry log
+          </span>
+        )}
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Channel">
-        {[null, ...PLATFORMS].map((p) => (
+        {[null, ...channels].map((p) => (
           <button
             key={p ?? "all"}
             role="tab"
@@ -554,6 +585,7 @@ function SourcesPanel({
         fmt={chart.fmt}
         selected={selected}
         onPick={(l) => onPickWeek(selected === l ? null : l)}
+        maxValue={metric === "conversion" ? 100 : undefined}
         tooltip={(w) =>
           `${w.label}\nInquiries ${w.inquiries}\nPaid orders ${w.paid}\nConversion ${Math.round(w.conversion)}%`
         }

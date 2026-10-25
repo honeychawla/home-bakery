@@ -25,6 +25,8 @@ export type InsightOrder = {
   received: number;
   cost: number; // ingredients + packaging (excludes gas)
   paid: boolean;
+  channel: string | null; // where the order came from, if tagged
+  hasInquiry: boolean; // an inquiry in the log is linked to this order
 };
 
 // "Fri 10/23" + the year the order was placed -> "2026-10-23".
@@ -56,6 +58,7 @@ export function toInsightOrders(
   orders: Order[],
   productsById: Map<string, Product>,
   unitCostById: Map<string, number>,
+  linkedOrderIds: Set<string> = new Set(),
   today = todayIso()
 ): InsightOrder[] {
   const out: InsightOrder[] = [];
@@ -83,6 +86,8 @@ export function toInsightOrders(
       received: eco.received,
       cost: eco.cost,
       paid: o.payment_status === "paid",
+      channel: o.channel ?? null,
+      hasInquiry: linkedOrderIds.has(o.id),
     });
   }
   return out;

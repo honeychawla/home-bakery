@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
-  Ingredient, MessageTemplate, Order, PickupSlot, Product, ProductIngredient,
+  Ingredient, Inquiry, MessageTemplate, Order, PickupSlot, Product, ProductIngredient,
   RecipeGroup, Settings,
 } from "./types";
 import { weekLabelFor } from "./orders";
@@ -97,4 +97,16 @@ export async function getTemplates(): Promise<MessageTemplate[]> {
 
 export function currentWeekLabel(): string {
   return weekLabelFor(new Date());
+}
+
+// Inquiries need the 20261025_inquiries migration. Until it's applied the table
+// doesn't exist; null tells callers "not set up yet" instead of crashing the page.
+export async function getInquiries(): Promise<Inquiry[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("inquiries")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) return null; // table missing: migration not applied yet
+  return (data ?? []) as Inquiry[];
 }
