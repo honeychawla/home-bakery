@@ -30,7 +30,7 @@ export default function PickupCheckoff({ order }: { order: Order }) {
       onClick={toggle}
       disabled={busy}
       aria-label={done ? "Mark not picked up" : "Mark picked up"}
-      className={`h-6 w-6 shrink-0 rounded-md border text-sm leading-none ${
+      className={`h-10 w-10 shrink-0 rounded-xl border text-lg leading-none sm:h-7 sm:w-7 sm:rounded-md sm:text-sm ${
         done
           ? "border-green-500 bg-green-500 text-white"
           : "border-stone-300 bg-white text-transparent hover:border-amber-400"

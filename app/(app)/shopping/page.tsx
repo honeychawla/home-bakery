@@ -1,8 +1,9 @@
 import Link from "next/link";
 import PrintButton from "@/components/PrintButton";
+import ShoppingChecklist from "@/components/ShoppingChecklist";
+import { createClient } from "@/lib/supabase/server";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
 import { shoppingList } from "@/lib/costing";
-import { money } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,13 @@ export default async function ShoppingPage({
     catalog.recipeLines,
     catalog.ingredients
   );
-  const totalCost = lines.reduce((s, l) => s + l.estCost, 0);
+
+  const supabase = await createClient();
+  const { data: checks } = await supabase
+    .from("shopping_checks")
+    .select("ingredient_id")
+    .eq("week_label", activeWeek);
+  const initialChecked = (checks ?? []).map((c) => c.ingredient_id);
 
   return (
     <div className="space-y-5">
@@ -51,37 +58,23 @@ export default async function ShoppingPage({
 
       <h1 className="hidden text-xl font-bold print:block">Shopping list — {activeWeek}</h1>
       <p className="text-xs text-stone-500">
-        Aggregated across paid orders, rounded up to what you can actually buy.
+        Aggregated across paid orders, rounded up to what you can actually buy. Tap items to
+        check them off as you shop — checks sync between your computer and phone.
       </p>
 
-      <section className="overflow-hidden rounded-2xl border border-amber-100 bg-white print:border-stone-300">
-        {lines.length === 0 && (
-          <p className="p-6 text-sm text-stone-400">
-            Nothing to buy — no paid orders with structured recipes this week.
-          </p>
-        )}
-        {lines.map((l) => (
-          <div
-            key={l.ingredient.id}
-            className="flex items-center justify-between border-b border-amber-50 px-4 py-3 text-sm last:border-0"
-          >
-            <span className="font-medium">{l.ingredient.name}</span>
-            <span className="text-xs text-stone-400">
-              need {Math.ceil(l.totalBase)} {l.ingredient.base_unit}
-            </span>
-            <span className="font-semibold">
-              buy {l.purchases} × {l.ingredient.purchase_unit}
-            </span>
-            <span className="w-16 text-right text-stone-500">{money(l.estCost)}</span>
-          </div>
-        ))}
-        {lines.length > 0 && (
-          <div className="flex justify-between bg-amber-50/60 px-4 py-3 text-sm font-bold">
-            <span>Estimated grocery cost</span>
-            <span>{money(totalCost)}</span>
-          </div>
-        )}
-      </section>
+      <ShoppingChecklist
+        weekLabel={activeWeek}
+        initialChecked={initialChecked}
+        lines={lines.map((l) => ({
+          ingredientId: l.ingredient.id,
+          name: l.ingredient.name,
+          purchaseUnit: l.ingredient.purchase_unit,
+          purchases: l.purchases,
+          totalBase: l.totalBase,
+          baseUnit: l.ingredient.base_unit,
+          estCost: l.estCost,
+        }))}
+      />
 
       {missingRecipes.length > 0 && (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm">

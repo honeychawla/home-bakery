@@ -4,6 +4,7 @@ import PrintButton from "@/components/PrintButton";
 import PickupCheckoff from "@/components/PickupCheckoff";
 import { getOrders, getPickupSlots, getWeekLabels } from "@/lib/data";
 import { DAY_NAMES, money, timeRange } from "@/lib/format";
+import { parsePickupDate, toIsoDay } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,18 @@ export default async function SchedulePage({
     if (!byKey.has(key)) byKey.set(key, []);
     byKey.get(key)!.push(o);
   }
-  const keys = [...byKey.keys()].sort();
+  // Today's runs first (this page is used on a phone mid-delivery), then by date.
+  const today = toIsoDay(new Date());
+  const dateOf = (key: string) => {
+    const group = byKey.get(key)!;
+    return parsePickupDate(group[0].pickup_day, group[0].placed_at) ?? "9999";
+  };
+  const keys = [...byKey.keys()].sort((a, b) => {
+    const da = dateOf(a);
+    const db = dateOf(b);
+    if ((da === today) !== (db === today)) return da === today ? -1 : 1;
+    return da === db ? a.localeCompare(b) : da.localeCompare(db);
+  });
 
   return (
     <div className="space-y-5">
@@ -79,18 +91,29 @@ export default async function SchedulePage({
 
       {keys.map((key) => {
         const list = byKey.get(key)!;
+        const isToday = dateOf(key) === today;
+        const done = list.filter((o) => o.status === "completed").length;
         const tarts = list
           .filter((o) => o.payment_status === "paid")
           .reduce((s, o) => s + (o.order_items ?? []).reduce((t, i) => t + i.qty, 0), 0);
         return (
           <section
             key={key}
-            className="rounded-2xl border border-amber-100 bg-white p-5 print:break-inside-avoid print:border-stone-300"
+            className={`rounded-2xl border bg-white p-4 sm:p-5 print:break-inside-avoid print:border-stone-300 ${
+              isToday ? "border-amber-400 ring-1 ring-amber-300" : "border-amber-100"
+            }`}
           >
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-bold">{key}</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-1">
+              <h2 className="font-bold">
+                {isToday && (
+                  <span className="mr-2 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase text-white">
+                    Today
+                  </span>
+                )}
+                {key}
+              </h2>
               <span className="text-xs text-stone-500">
-                {list.length} orders · {tarts} paid tarts
+                {done}/{list.length} handed off · {tarts} paid tarts
               </span>
             </div>
             <ul className="mt-3 divide-y divide-amber-50">

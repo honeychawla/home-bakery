@@ -170,6 +170,15 @@ create table if not exists message_log (
   created_at timestamptz not null default now()
 );
 
+-- Grocery-run check-offs: which shopping-list items are already bought,
+-- per week. Persisted so a list planned on desktop checks off on the phone.
+create table if not exists shopping_checks (
+  week_label text not null,
+  ingredient_id uuid not null references ingredients(id) on delete cascade,
+  checked_at timestamptz not null default now(),
+  primary key (week_label, ingredient_id)
+);
+
 -- ============ Row Level Security ============
 -- Single-tenant: any authenticated user (the baker) has full access.
 -- The anon key can read/write nothing; the webhook intake runs server-side
@@ -181,7 +190,8 @@ begin
   foreach t in array array[
     'settings','recipe_groups','products','product_aliases','ingredients',
     'product_ingredients','pickup_locations','pickup_slots','customers',
-    'orders','order_items','weeks','message_templates','message_log'
+    'orders','order_items','weeks','message_templates','message_log',
+    'shopping_checks'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists baker_all on %I', t);
