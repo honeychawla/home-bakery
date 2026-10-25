@@ -1,8 +1,10 @@
 import Link from "next/link";
 import PrintButton from "@/components/PrintButton";
+import ShoppingChecklist from "@/components/ShoppingChecklist";
+import { createClient } from "@/lib/supabase/server";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
 import { shoppingList } from "@/lib/costing";
-import { money } from "@/lib/format";
+import { restockReport } from "@/lib/restock";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,11 @@ export default async function ShoppingPage({
   const { week } = await searchParams;
   const weeks = await getWeekLabels();
   const activeWeek = week ?? weeks[0];
-  const [orders, catalog] = await Promise.all([getOrders(activeWeek), getCatalog()]);
+  const [orders, allOrders, catalog] = await Promise.all([
+    getOrders(activeWeek),
+    getOrders(), // all weeks — consumption history for restock projection
+    getCatalog(),
+  ]);
 
   const productsById = new Map(catalog.products.map((p) => [p.id, p]));
   const { lines, missingRecipes } = shoppingList(
@@ -23,7 +29,22 @@ export default async function ShoppingPage({
     catalog.recipeLines,
     catalog.ingredients
   );
-  const totalCost = lines.reduce((s, l) => s + l.estCost, 0);
+
+  const supabase = await createClient();
+  const { data: checks } = await supabase
+    .from("shopping_checks")
+    .select("ingredient_id")
+    .eq("week_label", activeWeek);
+  const initialChecked = (checks ?? []).map((c) => c.ingredient_id);
+
+  const restock = restockReport(
+    allOrders,
+    catalog.products,
+    catalog.recipeLines,
+    catalog.ingredients
+  );
+  const attention = restock.filter((r) => r.status === "low" || r.status === "soon");
+  const untrackedCount = restock.filter((r) => r.status === "untracked").length;
 
   return (
     <div className="space-y-5">
@@ -51,37 +72,64 @@ export default async function ShoppingPage({
 
       <h1 className="hidden text-xl font-bold print:block">Shopping list — {activeWeek}</h1>
       <p className="text-xs text-stone-500">
-        Aggregated across paid orders, rounded up to what you can actually buy.
+        Aggregated across paid orders, rounded up to what you can actually buy. Tap items to
+        check them off as you shop — checks sync between your computer and phone.
       </p>
 
-      <section className="overflow-hidden rounded-2xl border border-amber-100 bg-white print:border-stone-300">
-        {lines.length === 0 && (
-          <p className="p-6 text-sm text-stone-400">
-            Nothing to buy — no paid orders with structured recipes this week.
+      {attention.length > 0 && (
+        <section className="rounded-2xl border border-red-200 bg-red-50/70 p-4 print:hidden">
+          <h2 className="text-sm font-bold text-red-900">📉 Restock radar</h2>
+          <p className="mt-0.5 text-[11px] text-stone-500">
+            Projected from your stock-on-hand and recent weekly usage — not tied to this
+            week&apos;s orders. Checking items off below tops stock back up automatically.
           </p>
-        )}
-        {lines.map((l) => (
-          <div
-            key={l.ingredient.id}
-            className="flex items-center justify-between border-b border-amber-50 px-4 py-3 text-sm last:border-0"
-          >
-            <span className="font-medium">{l.ingredient.name}</span>
-            <span className="text-xs text-stone-400">
-              need {Math.ceil(l.totalBase)} {l.ingredient.base_unit}
-            </span>
-            <span className="font-semibold">
-              buy {l.purchases} × {l.ingredient.purchase_unit}
-            </span>
-            <span className="w-16 text-right text-stone-500">{money(l.estCost)}</span>
-          </div>
-        ))}
-        {lines.length > 0 && (
-          <div className="flex justify-between bg-amber-50/60 px-4 py-3 text-sm font-bold">
-            <span>Estimated grocery cost</span>
-            <span>{money(totalCost)}</span>
-          </div>
-        )}
-      </section>
+          <ul className="mt-2 space-y-1.5">
+            {attention.map((r) => (
+              <li key={r.ingredient.id} className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium">
+                  {r.ingredient.name}
+                  <span
+                    className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      r.status === "low" ? "bg-red-500 text-white" : "bg-orange-200 text-orange-900"
+                    }`}
+                  >
+                    {r.status === "low" ? "running low" : "reorder soon"}
+                  </span>
+                </span>
+                <span className="text-xs text-stone-500">
+                  ~{Math.round(r.stockNow ?? 0)} {r.ingredient.base_unit} left ·{" "}
+                  {r.weeksLeft != null ? `${r.weeksLeft.toFixed(1)} wk at current pace` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {untrackedCount > 0 && (
+            <p className="mt-2 text-[11px] text-stone-400">
+              {untrackedCount} ingredients untracked — set stock-on-hand on the{" "}
+              <Link href="/ingredients" className="underline">
+                Ingredients
+              </Link>{" "}
+              page to get predictions for them too.
+            </p>
+          )}
+        </section>
+      )}
+
+      <ShoppingChecklist
+        weekLabel={activeWeek}
+        initialChecked={initialChecked}
+        lines={lines.map((l) => ({
+          ingredientId: l.ingredient.id,
+          name: l.ingredient.name,
+          purchaseUnit: l.ingredient.purchase_unit,
+          purchases: l.purchases,
+          totalBase: l.totalBase,
+          baseUnit: l.ingredient.base_unit,
+          estCost: l.estCost,
+          baseQtyPerPurchase: Number(l.ingredient.base_qty),
+          tracked: l.ingredient.stock_qty != null,
+        }))}
+      />
 
       {missingRecipes.length > 0 && (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm">

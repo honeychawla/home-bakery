@@ -32,7 +32,23 @@ export type UpdatePaymentSync = {
   weekLabel?: string | null;
 };
 
-export type SheetSyncPayload = AppendOrderSync | UpdatePaymentSync;
+export type UpdateOrderSync = {
+  action: "updateOrder";
+  orderNum: string;
+  weekLabel?: string | null;
+  // Only the keys present are written to the sheet row.
+  fields: Partial<{
+    items: string;
+    total: number;
+    venmoName: string;
+    pickupDay: string;
+    pickupTime: string;
+    pickupPlace: string;
+    lang: string;
+  }>;
+};
+
+export type SheetSyncPayload = AppendOrderSync | UpdatePaymentSync | UpdateOrderSync;
 
 export async function sheetSync(
   payload: SheetSyncPayload

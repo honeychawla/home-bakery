@@ -1,7 +1,9 @@
 import Link from "next/link";
 import PayBadge from "@/components/PayBadge";
-import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
+import { getCatalog, getOrders, getPickupSlots, getWeekLabels } from "@/lib/data";
 import { bakeSheet, orderEconomics, shoppingList, unitCost } from "@/lib/costing";
+import { assembleTimeline, nextItem, saturdayFor, type PlanStep } from "@/lib/plan";
 import { money, pct } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +58,15 @@ export default async function Dashboard({
   const shop = shoppingList(orders, productsById, catalog.recipeLines, catalog.ingredients);
   const shopTotal = shop.lines.reduce((s, l) => s + l.estCost, 0);
 
+  // Next production step (the plan's dashboard nudge)
+  const supabase = await createClient();
+  const [{ data: planSteps }, slots] = await Promise.all([
+    supabase.from("plan_steps").select("*"),
+    getPickupSlots(),
+  ]);
+  const timeline = assembleTimeline((planSteps ?? []) as PlanStep[], slots, saturdayFor(null));
+  const upNext = nextItem(timeline, new Date());
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -87,6 +98,26 @@ export default async function Dashboard({
           highlight
         />
       </div>
+
+      {upNext && (
+        <Link
+          href="/plan"
+          className="flex items-center justify-between rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm hover:border-amber-400"
+        >
+          <span>
+            <span className="font-bold text-amber-700">Up next:</span> {upNext.title}
+          </span>
+          <span className="text-xs text-stone-400">
+            {new Date(upNext.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" })}
+            {upNext.time &&
+              ` · ${(() => {
+                const [h, m] = upNext.time.split(":").map(Number);
+                return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+              })()}`}{" "}
+            → Plan
+          </span>
+        </Link>
+      )}
 
       {unpaid.length > 0 && (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4">

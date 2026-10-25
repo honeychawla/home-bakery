@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 // Ordered to match the baker's real week: shop → manage orders → bake → deliver.
 const NAV = [
   { href: "/", label: "Home", icon: "🏠" },
+  { href: "/plan", label: "Plan", icon: "📅" },
   { href: "/shopping", label: "Shop", icon: "🛒" },
   { href: "/orders", label: "Orders", icon: "🧾" },
   { href: "/bake", label: "Bake", icon: "🥧" },

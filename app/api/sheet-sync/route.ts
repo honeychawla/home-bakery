@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
   const payload = (await req.json()) as SheetSyncPayload;
-  if (payload.action !== "appendOrder" && payload.action !== "updatePayment") {
+  const actions = ["appendOrder", "updatePayment", "updateOrder"];
+  if (!actions.includes(payload.action)) {
     return NextResponse.json({ ok: false, error: "unknown action" }, { status: 400 });
   }
   const result = await sheetSync(payload);

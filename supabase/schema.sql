@@ -61,6 +61,11 @@ create table if not exists ingredients (
   base_unit text not null default 'g',             -- g | ml | unit
   base_qty numeric(12,2) not null default 1,       -- base units per purchase (e.g. 1890)
   price_effective_date date not null default current_date,
+  -- restock prediction: stock on hand (base units; null = untracked) and, for
+  -- non-recipe consumables like packaging, consumption per tart sold
+  stock_qty numeric(12,2),
+  stock_updated_at timestamptz,
+  usage_per_tart numeric(10,4),
   created_at timestamptz not null default now()
 );
 
@@ -170,6 +175,35 @@ create table if not exists message_log (
   created_at timestamptz not null default now()
 );
 
+-- Weekly production plan: custom recurring steps (hard deadlines like order
+-- cutoffs and bake-finish times are derived from pickup_slots at render time).
+create table if not exists plan_steps (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  day_of_week int not null check (day_of_week between 0 and 6),
+  at_time time,
+  notes text,
+  sort_order int not null default 0,
+  active boolean not null default true
+);
+
+-- Per-week check-offs of plan steps (custom and auto, keyed by step_key).
+create table if not exists plan_checks (
+  week_label text not null,
+  step_key text not null,
+  checked_at timestamptz not null default now(),
+  primary key (week_label, step_key)
+);
+
+-- Grocery-run check-offs: which shopping-list items are already bought,
+-- per week. Persisted so a list planned on desktop checks off on the phone.
+create table if not exists shopping_checks (
+  week_label text not null,
+  ingredient_id uuid not null references ingredients(id) on delete cascade,
+  checked_at timestamptz not null default now(),
+  primary key (week_label, ingredient_id)
+);
+
 -- ============ Row Level Security ============
 -- Single-tenant: any authenticated user (the baker) has full access.
 -- The anon key can read/write nothing; the webhook intake runs server-side
@@ -181,7 +215,8 @@ begin
   foreach t in array array[
     'settings','recipe_groups','products','product_aliases','ingredients',
     'product_ingredients','pickup_locations','pickup_slots','customers',
-    'orders','order_items','weeks','message_templates','message_log'
+    'orders','order_items','weeks','message_templates','message_log',
+    'shopping_checks','plan_steps','plan_checks'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists baker_all on %I', t);
