@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { summarize, weekStats, type InsightOrder } from "@/lib/insights";
+import { mockSources } from "@/lib/mockSources";
 
 type MetricId = "sales" | "cost" | "profit" | "orders" | "tarts" | "unpaid";
 
@@ -186,6 +187,8 @@ export default function InsightsDashboard({ orders }: { orders: InsightOrder[] }
           }
         />
       </section>
+
+      <SourcesPanel rows={mockSources(scope)} scopeLabel={selected ?? "all weeks"} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-amber-100 bg-white p-4">
@@ -449,6 +452,82 @@ function WeekChart({
           {tip.text}
         </div>
       )}
+    </div>
+  );
+}
+
+// Where orders come from and where people drop off before paying.
+// Currently driven by MOCK data (lib/mockSources.ts).
+function SourcesPanel({ rows, scopeLabel }: { rows: ReturnType<typeof mockSources>; scopeLabel: string }) {
+  const inquiries = rows.reduce((s, r) => s + r.inquiries, 0);
+  const paid = rows.reduce((s, r) => s + r.paid, 0);
+  const dropped = inquiries - paid;
+  const rate = inquiries ? (paid / inquiries) * 100 : 0;
+  const maxInq = Math.max(1, ...rows.map((r) => r.inquiries));
+  const sorted = [...rows].sort((a, b) => b.paid - a.paid);
+  const withData = rows.filter((r) => r.inquiries >= 5);
+  const best = [...withData].sort((a, b) => b.paid / b.inquiries - a.paid / a.inquiries)[0];
+  const biggestDrop = [...rows].sort((a, b) => b.inquiries - b.paid - (a.inquiries - a.paid))[0];
+
+  return (
+    <section className="rounded-2xl border border-amber-100 bg-white p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-bold text-stone-600">
+          Conversion &amp; sources <span className="font-normal text-stone-400">· {scopeLabel}</span>
+        </h2>
+        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-500">
+          Sample data — real tracking not connected yet
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Mini label="Inquiries" value={String(inquiries)} sub="people who messaged" />
+        <Mini label="Paid orders" value={String(paid)} sub="placed and paid" />
+        <Mini label="Conversion" value={`${rate.toFixed(0)}%`} sub="inquiry → paid" highlight />
+        <Mini label="Never paid" value={String(dropped)} sub="inquired, no payment" />
+      </div>
+
+      <div className="mt-4 space-y-2.5">
+        {sorted.map((r) => {
+          const conv = r.inquiries ? Math.round((r.paid / r.inquiries) * 100) : 0;
+          const share = paid ? Math.round((r.paid / paid) * 100) : 0;
+          return (
+            <div key={r.platform} className="grid grid-cols-[96px_1fr_auto] items-center gap-3 text-xs sm:grid-cols-[120px_1fr_auto]">
+              <span className="text-right text-stone-600">{r.platform}</span>
+              <span className="flex h-4 overflow-hidden rounded-sm bg-stone-50" title={`${r.paid} paid, ${r.inquiries - r.paid} never paid`}>
+                <span className="h-full bg-amber-500" style={{ width: `${(r.paid / maxInq) * 100}%` }} />
+                <span className="h-full bg-stone-300" style={{ width: `${((r.inquiries - r.paid) / maxInq) * 100}%` }} />
+              </span>
+              <span className="w-40 whitespace-nowrap tabular-nums leading-tight text-stone-500">
+                <b className="text-stone-800">{r.paid} paid</b> · {share}% of orders
+                <br />
+                {r.inquiries} inquiries · {conv}% convert
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex gap-4 text-[11px] text-stone-500">
+        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />Paid</span>
+        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-stone-300" />Inquired, never paid</span>
+      </div>
+
+      {best && biggestDrop && (
+        <p className="mt-3 border-t border-amber-50 pt-3 text-sm">
+          <b>{best.platform}</b> converts best ({Math.round((best.paid / best.inquiries) * 100)}%).{" "}
+          <b>{biggestDrop.platform}</b> has the most people who never paid ({biggestDrop.inquiries - biggestDrop.paid}) — worth a follow-up.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function Mini({ label, value, sub, highlight }: { label: string; value: string; sub: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-xl border p-3 ${highlight ? "border-amber-300 bg-amber-100/70" : "border-amber-100 bg-white"}`}>
+      <p className="text-xs text-stone-500">{label}</p>
+      <p className="mt-0.5 text-lg font-bold tabular-nums">{value}</p>
+      <p className="text-[11px] text-stone-400">{sub}</p>
     </div>
   );
 }
