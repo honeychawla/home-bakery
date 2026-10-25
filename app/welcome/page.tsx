@@ -83,14 +83,6 @@ export default function WelcomePage() {
           </div>
         </div>
 
-        <div className="mt-20 flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-sm font-semibold text-stone-400">
-          <span>Piloted with Tart Theory</span>
-          <span>·</span>
-          <span>Built for weekend preorder bakers</span>
-          <span>·</span>
-          <span>Works with Squarespace &amp; Google Sheets</span>
-        </div>
-
         <div className="mt-24 rounded-[2.5rem] bg-[#241a16] px-10 py-16 text-center text-white">
           <h2 className="text-4xl font-extrabold tracking-tight">
             Stop juggling DMs and spreadsheets.
