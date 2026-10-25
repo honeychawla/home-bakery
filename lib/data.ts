@@ -20,6 +20,7 @@ export async function getSettings(): Promise<Settings> {
       sheet_embed_url: null,
       sheet_writeback_url: null,
       sheet_writeback_secret: null,
+      sources: null,
     }
   );
 }

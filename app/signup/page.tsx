@@ -4,23 +4,142 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Step = "account" | "platform" | "connect" | "connecting" | "connected" | "manual" | "done";
+type Step = "account" | "connectors" | "done";
 
-const SHEET = "Google Sheet / CSV";
-const PLATFORMS = ["Squarespace", "Square Online", "Shopify", SHEET, "Other / not sure"];
+type ConnectorDef = {
+  id: string;
+  label: string;
+  description: string;
+  placeholder: string;
+  confirmLabel?: string;
+};
+
+const CONNECTORS: ConnectorDef[] = [
+  {
+    id: "squarespace",
+    label: "Squarespace",
+    description: "Pulls your menu, pricing, and incoming orders automatically.",
+    placeholder: "yourbakery.squarespace.com",
+    confirmLabel: "Connect & authorize",
+  },
+  {
+    id: "square_online",
+    label: "Square Online",
+    description: "Same as above — menu and orders, synced in.",
+    placeholder: "yourbakery.square.site",
+    confirmLabel: "Connect & authorize",
+  },
+  {
+    id: "google_sheet",
+    label: "Google Sheet / CSV",
+    description: "Already tracking orders in a sheet? Import it directly — nothing to retype.",
+    placeholder: "Paste your Google Sheet link, or a CSV URL",
+    confirmLabel: "Import",
+  },
+  {
+    id: "google_form",
+    label: "Google Form",
+    description: "Taking preorders by form? New responses become orders automatically.",
+    placeholder: "Paste your Google Form link",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    description: "Tracks orders from comments and DMs — the easiest ones to lose.",
+    placeholder: "@yourbakery",
+  },
+  {
+    id: "facebook",
+    label: "Facebook / Marketplace",
+    description: "Keeps listings and buyer messages alongside every other order.",
+    placeholder: "facebook.com/yourbakery",
+  },
+  {
+    id: "wechat",
+    label: "WeChat / Xiaohongshu",
+    description: "Orders from group chats get logged with who ordered what.",
+    placeholder: "WeChat ID or 小红书 handle",
+  },
+];
+
+type CustomSource = { id: string; label: string; value: string };
+
+function ConnectorRow({
+  def,
+  connectedValue,
+  onConfirm,
+}: {
+  def: ConnectorDef;
+  connectedValue: string | null;
+  onConfirm: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(connectedValue ?? "");
+  const connected = connectedValue !== null;
+
+  return (
+    <div className={`rounded-2xl border p-4 ${connected ? "border-[#c7ddcc] bg-[#f3f9f4]" : "border-stone-200"}`}>
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f3ede8] text-sm font-bold text-stone-500">
+          {def.label.slice(0, 1)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">{def.label}</p>
+          <p className="text-xs text-stone-500">{def.description}</p>
+        </div>
+        {!open &&
+          (connected ? (
+            <span className="shrink-0 rounded-full bg-[#e5efe6] px-3 py-1 text-xs font-bold text-[#4f7a5c]">
+              Connected
+            </span>
+          ) : (
+            <button
+              onClick={() => setOpen(true)}
+              className="shrink-0 rounded-full border border-stone-200 px-3.5 py-1.5 text-xs font-semibold text-stone-700 hover:border-stone-300"
+            >
+              Connect
+            </button>
+          ))}
+      </div>
+      {open && (
+        <div className="mt-3">
+          <input
+            type="text"
+            autoFocus
+            placeholder={def.placeholder}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
+          />
+          <button
+            onClick={() => {
+              onConfirm(draft);
+              setOpen(false);
+            }}
+            className="mt-2 rounded-full bg-[#a3321f] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#8c2a19]"
+          >
+            {def.confirmLabel ?? "Connect"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("account");
   const [bakeryName, setBakeryName] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [platform, setPlatform] = useState<string | null>(null);
-  const [storeUrl, setStoreUrl] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const stepNumber = { account: 1, platform: 2, connect: 3, connecting: 3, connected: 3, manual: 3, done: 4 }[step];
+  // Multi-select by design — a baker can (and usually does) connect several
+  // sources at once, e.g. a website for orders plus Instagram for DMs.
+  const [connected, setConnected] = useState<Record<string, string>>({});
+  const [customSources, setCustomSources] = useState<CustomSource[]>([]);
+
+  const stepNumber = { account: 1, connectors: 2, done: 3 }[step];
 
   async function submitAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -33,37 +152,38 @@ export default function SignupPage() {
         await supabase.auth.signUp({ email, password });
       }
       await supabase.from("settings").update({ bakery_name: bakeryName || "My Bakery" }).eq("id", 1);
-      // Optional link, saved separately so a missing website_url column
-      // (migration not applied yet) never blocks the bakery name save.
-      if (websiteUrl.trim()) {
-        await supabase.from("settings").update({ website_url: websiteUrl.trim() }).eq("id", 1);
-      }
     } catch {
       // ignored — this is a demo flow, not a gate
     }
     setBusy(false);
-    setStep("platform");
+    setStep("connectors");
   }
 
-  function choosePlatform() {
-    if (!platform) return;
-    if (platform === "Other / not sure") {
-      setStep("manual");
-      return;
+  function addCustomSource() {
+    setCustomSources((prev) => [...prev, { id: crypto.randomUUID(), label: "", value: "" }]);
+  }
+
+  function updateCustomSource(id: string, field: "label" | "value", val: string) {
+    setCustomSources((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
+  }
+
+  function removeCustomSource(id: string) {
+    setCustomSources((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  async function finishConnectors() {
+    const sources = {
+      ...connected,
+      custom: customSources.filter((c) => c.label.trim() || c.value.trim()),
+    };
+    try {
+      const supabase = createClient();
+      await supabase.from("settings").update({ sources }).eq("id", 1);
+    } catch {
+      // ignored — demo flow, never blocks on a failed save
     }
-    setStep("connect");
-  }
-
-  function startConnecting() {
-    setStep("connecting");
-    setTimeout(() => {
-      setStep("connected");
-      setTimeout(() => router.push("/"), 1100);
-    }, 1600);
-  }
-
-  function finishManual() {
-    router.push("/");
+    setStep("done");
+    setTimeout(() => router.push("/"), 900);
   }
 
   return (
@@ -71,7 +191,7 @@ export default function SignupPage() {
       <div className="flex items-center justify-between">
         <span className="text-base font-extrabold tracking-tight">Preheat</span>
         <div className="flex items-center gap-1.5">
-          {[1, 2, 3, 4].map((n) => (
+          {[1, 2, 3].map((n) => (
             <span
               key={n}
               className="h-[7px] w-[7px] rounded-full"
@@ -98,20 +218,6 @@ export default function SignupPage() {
                   onChange={(e) => setBakeryName(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-stone-500">
-                  Website or social link <span className="font-normal text-stone-400">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="url"
-                  placeholder="e.g. tart-theory.com or instagram.com/yourbakery"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
-                />
-                <p className="mt-1 text-xs text-stone-400">Soon: we&apos;ll use it to pre-fill your menu.</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-stone-500">Email</label>
@@ -144,38 +250,67 @@ export default function SignupPage() {
           </>
         )}
 
-        {step === "platform" && (
+        {step === "connectors" && (
           <>
-            <h1 className="text-3xl font-extrabold tracking-tight">Where do you take orders today?</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight">Where do people find and order from you?</h1>
             <p className="mt-2 text-sm text-stone-500">
-              Connect it so Preheat can pull in your orders automatically. You can always change
-              this later.
+              Connect anything you use — Preheat pulls in orders and menu details automatically,
+              so you don&apos;t re-type anything. Connect as many or as few as you want.
             </p>
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPlatform(p)}
-                  className={`rounded-2xl border p-5 text-center text-sm font-semibold transition ${
-                    p === "Other / not sure" ? "col-span-2" : ""
-                  } ${
-                    platform === p
-                      ? "border-[#a3321f] bg-[#f6e4e0] text-[#a3321f]"
-                      : "border-stone-200 text-stone-700 hover:border-stone-300"
-                  }`}
-                >
-                  {p === "Other / not sure" ? "I don't have one yet — I'll add orders manually" : p}
-                </button>
+
+            <div className="mt-7 space-y-2.5">
+              {CONNECTORS.map((def) => (
+                <ConnectorRow
+                  key={def.id}
+                  def={def}
+                  connectedValue={connected[def.id] ?? null}
+                  onConfirm={(value) => setConnected((prev) => ({ ...prev, [def.id]: value }))}
+                />
               ))}
+
+              {customSources.map((c) => (
+                <div key={c.id} className="rounded-2xl border border-stone-200 p-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Source name (e.g. Xiaohongshu shop)"
+                      value={c.label}
+                      onChange={(e) => updateCustomSource(c.id, "label", e.target.value)}
+                      className="w-1/3 rounded-xl border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Link or handle"
+                      value={c.value}
+                      onChange={(e) => updateCustomSource(c.id, "value", e.target.value)}
+                      className="flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
+                    />
+                    <button
+                      onClick={() => removeCustomSource(c.id)}
+                      aria-label="Remove source"
+                      className="shrink-0 rounded-full px-2 py-1 text-sm text-stone-400 hover:text-stone-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={addCustomSource}
+                className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-stone-300 py-3 text-sm font-semibold text-stone-500 hover:border-stone-400 hover:text-stone-700"
+              >
+                + Add another source
+              </button>
             </div>
-            <div className="mt-8 flex gap-3">
-              <button onClick={() => setStep("account")} className="rounded-full px-5 py-3 text-sm font-semibold text-stone-500">
-                Back
+
+            <div className="mt-8 flex items-center justify-between gap-3">
+              <button onClick={finishConnectors} className="text-sm font-semibold text-stone-500 underline">
+                Skip for now — I&apos;ll add this later
               </button>
               <button
-                onClick={choosePlatform}
-                disabled={!platform}
-                className="flex-1 rounded-full bg-[#a3321f] py-3 text-sm font-semibold text-white hover:bg-[#8c2a19] disabled:opacity-40"
+                onClick={finishConnectors}
+                className="rounded-full bg-[#a3321f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#8c2a19]"
               >
                 Continue
               </button>
@@ -183,86 +318,16 @@ export default function SignupPage() {
           </>
         )}
 
-        {step === "connect" && (
-          <>
-            {/* A sheet/CSV has no storefront: ask for the link where orders collect */}
-            <h1 className="text-3xl font-extrabold tracking-tight">Connect {platform}</h1>
-            <p className="mt-2 text-sm text-stone-500">
-              Preheat reads new orders as they come in — nothing changes on your storefront.
-            </p>
-            <div className="mt-8 rounded-2xl border border-stone-200 p-6">
-              <label className="text-xs font-semibold text-stone-500">
-                {platform === SHEET ? "URL where your orders collect" : "Your store URL"}
-              </label>
-              <input
-                type="text"
-                placeholder={platform === SHEET ? "docs.google.com/spreadsheets/d/…" : "yourbakery.squarespace.com"}
-                value={storeUrl}
-                onChange={(e) => setStoreUrl(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
-              />
-              <p className="mt-3 text-xs text-stone-500">
-                You&apos;ll be asked to approve access on {platform === SHEET ? "Google" : `${platform}'s site`} — Preheat
-                never sees your password.
-              </p>
-            </div>
-            <div className="mt-8 flex gap-3">
-              <button onClick={() => setStep("platform")} className="rounded-full px-5 py-3 text-sm font-semibold text-stone-500">
-                Back
-              </button>
-              <button
-                onClick={startConnecting}
-                className="flex-1 rounded-full bg-[#a3321f] py-3 text-sm font-semibold text-white hover:bg-[#8c2a19]"
-              >
-                Connect &amp; authorize
-              </button>
-            </div>
-          </>
-        )}
-
-        {step === "connecting" && (
-          <div className="flex flex-col items-center py-16 text-center">
-            <svg className="animate-spin" width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <circle cx="20" cy="20" r="16" stroke="#ece5de" strokeWidth="4" />
-              <path d="M20 4a16 16 0 0116 16" stroke="#a3321f" strokeWidth="4" strokeLinecap="round" />
-            </svg>
-            <h2 className="mt-6 text-xl font-bold">Connecting to {platform}…</h2>
-            <p className="mt-1 text-sm text-stone-500">Pulling in your recent orders</p>
-          </div>
-        )}
-
-        {step === "connected" && (
+        {step === "done" && (
           <div className="flex flex-col items-center py-16 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#e5efe6]">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M5 12l5 5 9-10" stroke="#4f7a5c" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <h2 className="mt-5 text-xl font-bold">Connected!</h2>
+            <h2 className="mt-5 text-xl font-bold">You&apos;re all set!</h2>
             <p className="mt-1 text-sm text-stone-500">Taking you to your dashboard…</p>
           </div>
-        )}
-
-        {step === "manual" && (
-          <>
-            <h1 className="text-3xl font-extrabold tracking-tight">No problem — add orders yourself.</h1>
-            <p className="mt-2 text-sm text-stone-500">
-              You can always connect a store later from Settings. For now, you&apos;ll add each
-              order manually, or import a CSV whenever you&apos;re ready.
-            </p>
-            <div className="mt-8 flex items-center justify-center rounded-2xl border border-stone-200 p-10">
-              <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                <rect x="10" y="10" width="36" height="36" rx="8" fill="#f6e4e0" />
-                <path d="M28 20v16M20 28h16" stroke="#a3321f" strokeWidth="2.4" strokeLinecap="round" />
-              </svg>
-            </div>
-            <button
-              onClick={finishManual}
-              className="mt-8 w-full rounded-full bg-[#a3321f] py-3 text-sm font-semibold text-white hover:bg-[#8c2a19]"
-            >
-              Continue
-            </button>
-          </>
         )}
       </div>
     </div>

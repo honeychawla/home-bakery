@@ -16,6 +16,8 @@ create table if not exists settings (
   -- (see scripts/sheet-writeback.gs and the README)
   sheet_writeback_url text,
   sheet_writeback_secret text,
+  -- Onboarding-connected sources: { [connectorId]: value, custom: [{label, value}] }
+  sources jsonb,
   updated_at timestamptz not null default now()
 );
 

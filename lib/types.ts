@@ -104,4 +104,5 @@ export type Settings = {
   sheet_embed_url: string | null;
   sheet_writeback_url: string | null;
   sheet_writeback_secret: string | null;
+  sources: Record<string, string | { label: string; value: string }[]> | null;
 };
