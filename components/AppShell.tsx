@@ -43,7 +43,7 @@ export default function AppShell({
     <div className="min-h-screen bg-stone-50 text-stone-800 sm:flex">
       {/* Left sidebar (desktop) */}
       <aside className="hidden sm:flex sm:sticky sm:top-0 sm:h-screen sm:w-60 sm:shrink-0 sm:flex-col sm:border-r sm:border-stone-200 sm:bg-white print:hidden">
-        <Link href="/" className="px-5 pt-5 text-base font-bold tracking-tight">
+        <Link href="/welcome" className="px-5 pt-5 text-base font-bold tracking-tight">
           Preheat
         </Link>
 
@@ -103,7 +103,7 @@ export default function AppShell({
       {/* Mobile top bar */}
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/90 backdrop-blur sm:hidden print:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-baseline gap-2">
+          <Link href="/welcome" className="flex items-baseline gap-2">
             <span className="font-bold">Preheat</span>
             <span className="text-xs text-stone-400">· {bakeryName}</span>
           </Link>
