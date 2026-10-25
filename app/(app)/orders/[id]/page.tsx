@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import PayBadge from "@/components/PayBadge";
 import OrderActions from "@/components/OrderActions";
+import OrderEditForm from "@/components/OrderEditForm";
 import MessageComposer from "@/components/MessageComposer";
 import { getCatalog, getOrder, getSettings, getTemplates } from "@/lib/data";
 import { orderEconomics, unitCost } from "@/lib/costing";
@@ -109,6 +110,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </section>
 
       <OrderActions order={order} />
+
+      <OrderEditForm order={order} />
 
       <MessageComposer order={order} templates={templates} settings={settings} />
 

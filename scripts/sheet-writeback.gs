@@ -48,36 +48,60 @@ function doPost(e) {
     return reply({ ok: true, tab: sheet.getName() });
   }
 
-  if (data.action === 'updatePayment') {
-    // Search the named weekly tab first, then every tab.
-    var tabs = [];
-    if (data.weekLabel) {
-      var named = ss.getSheetByName(String(data.weekLabel));
-      if (named) tabs.push(named);
-    }
-    ss.getSheets().forEach(function (s) {
-      if (tabs.indexOf(s) === -1) tabs.push(s);
-    });
-    for (var t = 0; t < tabs.length; t++) {
-      var sheet2 = tabs[t];
-      var rows = sheet2.getLastRow();
-      if (rows < 1) continue;
-      var orderCol = sheet2.getRange(1, 2, rows, 1).getValues(); // column B
-      for (var r = 0; r < orderCol.length; r++) {
-        if (String(orderCol[r][0]).trim() === String(data.orderNum).trim()) {
-          sheet2.getRange(r + 1, 5).setValue(!!data.paid); // Paid via Venmo
-          sheet2.getRange(r + 1, 6).setValue(
-            data.paid && data.amountReceived != null ? num(data.amountReceived) : ''
-          );
-          if (data.venmoName) sheet2.getRange(r + 1, 7).setValue(str(data.venmoName));
-          return reply({ ok: true, tab: sheet2.getName(), row: r + 1 });
-        }
+  if (data.action === 'updateOrder') {
+    // Field-level edit of an existing row, matched by Order #.
+    // Accepted fields → columns: items(3), total(4), venmoName(7),
+    // pickupDay(8), pickupTime(9), pickupPlace(10), lang(11).
+    var found = findOrderRow(ss, data.weekLabel, data.orderNum);
+    if (!found) return reply({ ok: false, error: 'order not found: ' + data.orderNum });
+    var cols = { items: 3, total: 4, venmoName: 7, pickupDay: 8, pickupTime: 9, pickupPlace: 10, lang: 11 };
+    var updated = [];
+    for (var key in cols) {
+      if (data.fields && data.fields.hasOwnProperty(key)) {
+        var value = key === 'total' ? num(data.fields[key]) : str(data.fields[key]);
+        found.sheet.getRange(found.row, cols[key]).setValue(value);
+        updated.push(key);
       }
     }
-    return reply({ ok: false, error: 'order not found: ' + data.orderNum });
+    return reply({ ok: true, tab: found.sheet.getName(), row: found.row, updated: updated });
+  }
+
+  if (data.action === 'updatePayment') {
+    var hit = findOrderRow(ss, data.weekLabel, data.orderNum);
+    if (!hit) return reply({ ok: false, error: 'order not found: ' + data.orderNum });
+    hit.sheet.getRange(hit.row, 5).setValue(!!data.paid); // Paid via Venmo
+    hit.sheet.getRange(hit.row, 6).setValue(
+      data.paid && data.amountReceived != null ? num(data.amountReceived) : ''
+    );
+    if (data.venmoName) hit.sheet.getRange(hit.row, 7).setValue(str(data.venmoName));
+    return reply({ ok: true, tab: hit.sheet.getName(), row: hit.row });
   }
 
   return reply({ ok: false, error: 'unknown action' });
+}
+
+// Find a row by Order # (column B): the named weekly tab first, then every tab.
+function findOrderRow(ss, weekLabel, orderNum) {
+  var tabs = [];
+  if (weekLabel) {
+    var named = ss.getSheetByName(String(weekLabel));
+    if (named) tabs.push(named);
+  }
+  ss.getSheets().forEach(function (s) {
+    if (tabs.indexOf(s) === -1) tabs.push(s);
+  });
+  for (var t = 0; t < tabs.length; t++) {
+    var sheet = tabs[t];
+    var rows = sheet.getLastRow();
+    if (rows < 1) continue;
+    var orderCol = sheet.getRange(1, 2, rows, 1).getValues(); // column B
+    for (var r = 0; r < orderCol.length; r++) {
+      if (String(orderCol[r][0]).trim() === String(orderNum).trim()) {
+        return { sheet: sheet, row: r + 1 };
+      }
+    }
+  }
+  return null;
 }
 
 function getOrCreateTab(ss, name) {
