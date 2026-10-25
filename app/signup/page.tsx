@@ -12,6 +12,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("account");
   const [bakeryName, setBakeryName] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [platform, setPlatform] = useState<string | null>(null);
@@ -31,6 +32,11 @@ export default function SignupPage() {
         await supabase.auth.signUp({ email, password });
       }
       await supabase.from("settings").update({ bakery_name: bakeryName || "My Bakery" }).eq("id", 1);
+      // Optional link, saved separately so a missing website_url column
+      // (migration not applied yet) never blocks the bakery name save.
+      if (websiteUrl.trim()) {
+        await supabase.from("settings").update({ website_url: websiteUrl.trim() }).eq("id", 1);
+      }
     } catch {
       // ignored — this is a demo flow, not a gate
     }
@@ -91,6 +97,20 @@ export default function SignupPage() {
                   onChange={(e) => setBakeryName(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
                 />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500">
+                  Website or social link <span className="font-normal text-stone-400">(optional)</span>
+                </label>
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="e.g. tart-theory.com or instagram.com/yourbakery"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
+                />
+                <p className="mt-1 text-xs text-stone-400">Soon: we&apos;ll use it to pre-fill your menu.</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-stone-500">Email</label>
