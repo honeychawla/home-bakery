@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 
 type Step = "account" | "platform" | "connect" | "connecting" | "connected" | "manual" | "done";
 
-const PLATFORMS = ["Squarespace", "Square Online", "Shopify", "Google Sheet / CSV", "Other / not sure"];
+const SHEET = "Google Sheet / CSV";
+const PLATFORMS = ["Squarespace", "Square Online", "Shopify", SHEET, "Other / not sure"];
 
 export default function SignupPage() {
   const router = useRouter();
@@ -184,22 +185,25 @@ export default function SignupPage() {
 
         {step === "connect" && (
           <>
+            {/* A sheet/CSV has no storefront: ask for the link where orders collect */}
             <h1 className="text-3xl font-extrabold tracking-tight">Connect {platform}</h1>
             <p className="mt-2 text-sm text-stone-500">
               Preheat reads new orders as they come in — nothing changes on your storefront.
             </p>
             <div className="mt-8 rounded-2xl border border-stone-200 p-6">
-              <label className="text-xs font-semibold text-stone-500">Your store URL</label>
+              <label className="text-xs font-semibold text-stone-500">
+                {platform === SHEET ? "URL where your orders collect" : "Your store URL"}
+              </label>
               <input
                 type="text"
-                placeholder="yourbakery.squarespace.com"
+                placeholder={platform === SHEET ? "docs.google.com/spreadsheets/d/…" : "yourbakery.squarespace.com"}
                 value={storeUrl}
                 onChange={(e) => setStoreUrl(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
               />
               <p className="mt-3 text-xs text-stone-500">
-                You&apos;ll be asked to approve access on {platform}&apos;s site — Preheat never
-                sees your password.
+                You&apos;ll be asked to approve access on {platform === SHEET ? "Google" : `${platform}'s site`} — Preheat
+                never sees your password.
               </p>
             </div>
             <div className="mt-8 flex gap-3">
