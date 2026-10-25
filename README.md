@@ -8,6 +8,17 @@ Built for home bakers (cottage-food operators) and piloted with **Tart Theory**,
 
 **Live demo:** [home-bakery-lovat.vercel.app/welcome](https://home-bakery-lovat.vercel.app/welcome) (sample data, anonymized customers)
 
+## Why This Matters
+
+Tart Theory's patchwork is the norm, not the exception:
+
+- **Solo businesses are being left behind on AI.** Only 15.3% of businesses with no employees pay for AI tools, vs. 26.1% of businesses with employees (Dec 2025), and the gap holds even at similar revenue. Researchers suggest time and capacity, not cost, may be the barrier. *(JPMorganChase Institute, 2026)*
+- **Food businesses are among the slowest adopters.** AI adoption in accommodation and food services is 2.9%. *(Brookings, cited by JPMorganChase Institute)*
+- **Orders are scattered across channels.** Small businesses (2–99 employees) sell through a median of 3 channels; 28% use 5 or more, 51% sell through social media, and 47% plan to add channels next year. *(SBE Council Small Business Technology Use Survey, 2026)*
+- **Accuracy is the top worry, and time is the payoff.** 45% of small businesses cite accuracy and reliability as a concern about AI, while those using it report saving a median of 5 hours of the owner's time per week. *(SBE Council, 2026)*
+
+That's why Preheat keeps every number in plain code, uses Claude only for messy human input, and connects to the tools bakers already use instead of asking them to switch.
+
 ## Features
 
 - **Bake sheet** — exactly how many of each flavor to bake per pickup day, counting **paid orders only**. Flavors that share a base recipe are grouped and rounded up to whole batches (extras shown so you can sell them), with a per-flavor ingredient breakdown and check-offs for baked flavors and packed orders.
