@@ -32,8 +32,8 @@ const CONNECTORS: ConnectorDef[] = [
   {
     id: "google_sheet",
     label: "Google Sheet / CSV",
-    description: "Already tracking orders in a sheet? Import it directly — nothing to retype.",
-    placeholder: "Paste your Google Sheet link, or a CSV URL",
+    description: "Already tracking orders in a sheet? Paste its link to view it inside Preheat, then import your orders as a CSV — nothing to retype.",
+    placeholder: "Paste your Google Sheet link (shared: anyone with the link)",
     confirmLabel: "Import",
   },
   {
@@ -126,6 +126,17 @@ function ConnectorRow({
   );
 }
 
+// Turns a Google Sheets link into one that can be shown inside the app.
+// "Publish to web" links (…/pubhtml) work as-is; a normal share link
+// (…/spreadsheets/d/<id>/edit) becomes …/preview, which displays when the
+// sheet is shared as "Anyone with the link can view".
+function toSheetEmbedUrl(link: string): string | null {
+  if (!link) return null;
+  if (/docs\.google\.com\/spreadsheets\/.*\/pubhtml/.test(link)) return link;
+  const m = link.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? `https://docs.google.com/spreadsheets/d/${m[1]}/preview` : null;
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("account");
@@ -182,14 +193,21 @@ export default function SignupPage() {
       ...connected,
       custom: customSources.filter((c) => c.label.trim() || c.value.trim()),
     };
+    // Google Sheet / CSV uses the app's real features: the link becomes the
+    // in-app sheet view (Orders), and the baker lands on the CSV importer.
+    const sheetLink = connected["google_sheet"]?.trim() ?? "";
+    const sheetEmbedUrl = toSheetEmbedUrl(sheetLink);
     try {
       const supabase = createClient();
       await supabase.from("settings").update({ sources }).eq("id", 1);
+      if (sheetEmbedUrl) {
+        await supabase.from("settings").update({ sheet_embed_url: sheetEmbedUrl }).eq("id", 1);
+      }
     } catch {
       // ignored — demo flow, never blocks on a failed save
     }
     setStep("done");
-    setTimeout(() => router.push("/"), 900);
+    setTimeout(() => router.push(sheetLink ? "/orders/import" : "/"), 900);
   }
 
   return (
