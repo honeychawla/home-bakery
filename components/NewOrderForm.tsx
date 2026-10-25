@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { weekLabelFor } from "@/lib/orders";
+import { formatPickupDay, nextOccurrence } from "@/lib/dates";
 import { DAY_NAMES, money, timeRange } from "@/lib/format";
 import type { PickupSlot, Product } from "@/lib/types";
 
@@ -77,6 +78,7 @@ export default function NewOrderForm({
     setError(null);
     const supabase = createClient();
     const slot = slots.find((s) => s.id === slotId);
+    const pickupDate = slot ? nextOccurrence(slot.day_of_week) : null;
     const orderNum = `M-${Date.now().toString(36).toUpperCase().slice(-6)}`;
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -87,8 +89,8 @@ export default function NewOrderForm({
         payment_status: "unpaid",
         total,
         venmo_name: customer || null,
-        week_label: weekLabelFor(new Date()),
-        pickup_day: slot ? DAY_NAMES[slot.day_of_week] : null,
+        week_label: pickupDate ? weekLabelFor(pickupDate) : weekLabelFor(new Date()),
+        pickup_day: pickupDate ? formatPickupDay(pickupDate) : null,
         pickup_time: slot ? timeRange(slot.start_time, slot.end_time) : null,
         pickup_place: slot?.pickup_locations?.label_en ?? null,
         pickup_slot_id: slotId || null,

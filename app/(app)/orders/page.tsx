@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PayBadge from "@/components/PayBadge";
+import OrdersCalendar from "@/components/OrdersCalendar";
 import { getOrders, getWeekLabels } from "@/lib/data";
 import { money } from "@/lib/format";
 
@@ -8,26 +9,49 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string; filter?: string }>;
+  searchParams: Promise<{ week?: string; filter?: string; view?: string }>;
 }) {
-  const { week, filter } = await searchParams;
+  const { week, filter, view } = await searchParams;
+  const calendarView = view === "calendar";
   const weeks = await getWeekLabels();
-  const activeWeek = week === "all" ? undefined : week ?? weeks[0];
+  // Calendar spans weeks, so it always loads all orders.
+  const activeWeek = calendarView || week === "all" ? undefined : week ?? weeks[0];
   let orders = await getOrders(activeWeek);
-  if (filter === "unpaid") orders = orders.filter((o) => o.payment_status !== "paid");
+  if (!calendarView && filter === "unpaid")
+    orders = orders.filter((o) => o.payment_status !== "paid");
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">Orders</h1>
-        <Link
-          href="/orders/new"
-          className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
-        >
-          + Add order
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-stone-200 bg-white p-0.5 text-xs">
+            <Link
+              href="/orders"
+              className={`rounded-md px-3 py-1 ${!calendarView ? "bg-amber-100 font-semibold text-amber-900" : "text-stone-500"}`}
+            >
+              List
+            </Link>
+            <Link
+              href="/orders?view=calendar"
+              className={`rounded-md px-3 py-1 ${calendarView ? "bg-amber-100 font-semibold text-amber-900" : "text-stone-500"}`}
+            >
+              Calendar
+            </Link>
+          </div>
+          <Link
+            href="/orders/new"
+            className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
+          >
+            + Add order
+          </Link>
+        </div>
       </div>
 
+      {calendarView && <OrdersCalendar orders={orders} />}
+
+      {!calendarView && (
+      <>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {[...weeks.slice(0, 4), "all"].map((w) => (
           <Link
@@ -80,6 +104,8 @@ export default async function OrdersPage({
           </Link>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }
