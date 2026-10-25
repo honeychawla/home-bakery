@@ -12,6 +12,10 @@ create table if not exists settings (
   wechat_id text,
   -- publish-to-web URL of your existing Google Sheet, for the in-app view
   sheet_embed_url text,
+  -- Apps Script web app that writes app changes back into the sheet
+  -- (see scripts/sheet-writeback.gs and the README)
+  sheet_writeback_url text,
+  sheet_writeback_secret text,
   updated_at timestamptz not null default now()
 );
 

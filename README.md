@@ -92,6 +92,18 @@ Content-Type: text/plain
 - If you set `INTAKE_TOKEN`, append `?token=<your token>` to the URL.
 - Item names are matched against your menu, including alternate spellings (add aliases in the database's `product_aliases` table).
 
+### Step 6: Keep your Google Sheet in sync (optional)
+
+If you still use a Google Sheet (or want it as a backup), the app can mirror its changes back into the sheet: new orders you add in the app are appended to the right weekly tab, and marking an order paid updates the Paid / Amount Received cells. Setup is five minutes:
+
+1. Open your orders Google Sheet → **Extensions → Apps Script**.
+2. Paste the contents of [`scripts/sheet-writeback.gs`](./scripts/sheet-writeback.gs), replacing any starter code.
+3. Change the `SECRET` line to a random string you invent.
+4. Click **Deploy → New deployment** → type **Web app** → *Execute as: Me* · *Who has access: Anyone* → **Deploy**, and approve the one-time authorization prompt.
+5. Copy the web app URL (ends in `/exec`) and paste it plus your secret into the app's **Settings → Sheet write-back**.
+
+Notes: the script runs with *your* Google permissions — the app never sees your Google account; it only calls the URL with the secret. Orders arriving via the webhook or CSV import are *not* mirrored back (they came from the sheet's side already — mirroring them would create duplicates). To see the sheet inside the app, also fill **Settings → Google Sheet embed URL** (File → Share → Publish to web → Embed).
+
 Your bakery app is ready to use.
 
 ---
@@ -120,6 +132,8 @@ Open [http://localhost:3000](http://localhost:3000).
 │   └── login/
 ├── components/           # Client components (forms, check-offs, composer)
 ├── lib/                  # Domain logic: costing, bake sheet, shopping list, parsing
+├── scripts/
+│   └── sheet-writeback.gs # Apps Script: mirrors app changes into your Google Sheet
 ├── supabase/
 │   ├── schema.sql        # Database schema — run once in the SQL Editor
 │   └── seed.sql          # Sample bakery data (optional)

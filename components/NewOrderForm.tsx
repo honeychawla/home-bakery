@@ -117,6 +117,24 @@ export default function NewOrderForm({
       setError(itemsError.message);
       return;
     }
+    // Mirror the new order into the connected Google Sheet (best-effort).
+    fetch("/api/sheet-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "appendOrder",
+        orderNum,
+        items: items.map((p) => `${qty[p.id]}x ${p.name_en} ($${p.price})`).join(";\n"),
+        total,
+        paid: false,
+        venmoName: customer || null,
+        pickupDay: pickupDate ? formatPickupDay(pickupDate) : null,
+        pickupTime: slot ? timeRange(slot.start_time, slot.end_time) : null,
+        pickupPlace: slot?.pickup_locations?.label_en ?? null,
+        lang: "en",
+        weekLabel: pickupDate ? weekLabelFor(pickupDate) : weekLabelFor(new Date()),
+      }),
+    }).catch(() => {});
     router.push(`/orders/${order.id}`);
     router.refresh();
   }

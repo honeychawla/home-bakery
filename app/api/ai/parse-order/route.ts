@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aiDisabledResponse, aiEnabled, anthropic, AI_MODEL, extractJson } from "@/lib/ai";
 import { buildAliasMap, resolveProduct, weekLabelFor } from "@/lib/orders";
+import { sheetSync } from "@/lib/sheetSync";
 
 // Quick-add: paste a customer DM/text (any language) and get a draft order.
 // POST { text: string, createOrder?: boolean }
@@ -104,5 +105,16 @@ export async function POST(req: NextRequest) {
       unit_price: i.unitPrice,
     }))
   );
+  // Mirror into the connected Google Sheet (best-effort, non-blocking failure).
+  await sheetSync({
+    action: "appendOrder",
+    orderNum,
+    items: items.map((i) => `${i.qty}x ${i.name} ($${i.unitPrice})`).join(";\n"),
+    total,
+    paid: false,
+    venmoName: parsed.customerName,
+    pickupDay: parsed.pickupDay,
+    weekLabel: weekLabelFor(new Date()),
+  });
   return NextResponse.json({ ok: true, orderId: order.id, orderNum, parsed: { ...parsed, items, total } });
 }

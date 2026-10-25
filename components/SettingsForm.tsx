@@ -12,6 +12,8 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     venmo_handle: settings.venmo_handle ?? "",
     wechat_id: settings.wechat_id ?? "",
     sheet_embed_url: settings.sheet_embed_url ?? "",
+    sheet_writeback_url: settings.sheet_writeback_url ?? "",
+    sheet_writeback_secret: settings.sheet_writeback_secret ?? "",
   });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -29,6 +31,8 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         venmo_handle: form.venmo_handle || null,
         wechat_id: form.wechat_id || null,
         sheet_embed_url: form.sheet_embed_url || null,
+        sheet_writeback_url: form.sheet_writeback_url || null,
+        sheet_writeback_secret: form.sheet_writeback_secret || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
@@ -84,6 +88,27 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
             sheets are viewable by anyone with the URL.
           </span>
         </label>
+        <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3">
+          <p className="text-xs font-bold text-stone-600">Sheet write-back (optional)</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-stone-400">
+            Mirrors app changes (new orders, payment updates) back into your Google Sheet.
+            Deploy <code>scripts/sheet-writeback.gs</code> on your sheet (steps in the README),
+            then paste the web app URL and your secret here.
+          </p>
+          <input
+            value={form.sheet_writeback_url}
+            onChange={(e) => setForm({ ...form, sheet_writeback_url: e.target.value })}
+            placeholder="https://script.google.com/macros/s/…/exec"
+            className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+          />
+          <input
+            value={form.sheet_writeback_secret}
+            onChange={(e) => setForm({ ...form, sheet_writeback_secret: e.target.value })}
+            placeholder="Shared secret (must match SECRET in the script)"
+            type="password"
+            className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+          />
+        </div>
         <button
           onClick={save}
           disabled={busy}

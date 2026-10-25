@@ -22,6 +22,22 @@ export default function OrderActions({ order }: { order: Order }) {
       alert(error.message);
       return;
     }
+    // Mirror payment changes to the connected Google Sheet (best-effort).
+    if ("payment_status" in fields) {
+      fetch("/api/sheet-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updatePayment",
+          orderNum: order.order_num,
+          paid: fields.payment_status === "paid",
+          amountReceived:
+            fields.payment_status === "paid" ? (fields.amount_received as number) : null,
+          venmoName: order.venmo_name,
+          weekLabel: order.week_label,
+        }),
+      }).catch(() => {});
+    }
     router.refresh();
   }
 

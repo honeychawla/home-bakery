@@ -99,4 +99,6 @@ export type Settings = {
   venmo_handle: string | null;
   wechat_id: string | null;
   sheet_embed_url: string | null;
+  sheet_writeback_url: string | null;
+  sheet_writeback_secret: string | null;
 };

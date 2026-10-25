@@ -18,6 +18,8 @@ export async function getSettings(): Promise<Settings> {
       venmo_handle: null,
       wechat_id: null,
       sheet_embed_url: null,
+      sheet_writeback_url: null,
+      sheet_writeback_secret: null,
     }
   );
 }
