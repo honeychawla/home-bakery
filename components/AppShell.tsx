@@ -16,10 +16,25 @@ const NAV = [
   { href: "/schedule", label: "Deliver" },
 ];
 
-// Grouped for the sidebar: overview, then the workflow in order.
-const NAV_GROUPS = [
-  { label: null, items: NAV.filter((n) => ["/", "/products", "/insights"].includes(n.href)) },
-  { label: "Workflow", items: NAV.filter((n) => ["/plan", "/shopping", "/orders", "/bake", "/schedule"].includes(n.href)) },
+// Overview group stays flat; the real workflow is presented as 3 connected
+// steps below, each a card — Prep bundles the pre-bake pages (orders intake,
+// shopping list, timeline) since they all happen before the oven goes on.
+const OVERVIEW = NAV.filter((n) => ["/", "/products", "/insights"].includes(n.href));
+
+const STEPS = [
+  {
+    number: 1,
+    label: "Prep",
+    desc: "Orders, shopping, timeline",
+    paths: ["/orders", "/shopping", "/plan"],
+    subItems: [
+      { href: "/orders", label: "Orders" },
+      { href: "/shopping", label: "Shop" },
+      { href: "/plan", label: "Plan" },
+    ],
+  },
+  { number: 2, label: "Bake", desc: "Order breakdown", href: "/bake" },
+  { number: 3, label: "Deliver", desc: "Pickup checklist", href: "/schedule" },
 ];
 
 export default function AppShell({
@@ -56,31 +71,78 @@ export default function AppShell({
           </div>
         </div>
 
-        <nav className="mt-5 flex flex-1 flex-col gap-4 px-3">
-          {NAV_GROUPS.map((group, i) => (
-            <div key={i}>
-              {group.label && (
-                <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
-                  {group.label}
-                </p>
-              )}
-              <div className="flex flex-col gap-0.5">
-                {group.items.map((n) => (
-                  <Link
-                    key={n.href}
-                    href={n.href}
-                    className={`rounded-lg px-3 py-2 text-sm ${
-                      pathname === n.href
-                        ? "bg-amber-50 font-semibold text-amber-900"
-                        : "text-stone-600 hover:bg-stone-50"
+        <nav className="mt-5 flex flex-1 flex-col gap-5 px-3">
+          <div className="flex flex-col gap-0.5">
+            {OVERVIEW.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`rounded-lg px-3 py-2 text-sm ${
+                  pathname === n.href
+                    ? "bg-amber-50 font-semibold text-amber-900"
+                    : "text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
+
+          <div>
+            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+              Workflow
+            </p>
+            <div className="relative flex flex-col gap-2 pl-1">
+              <div className="absolute left-[19px] top-6 bottom-6 w-[2px] bg-stone-200" />
+              {STEPS.map((step) => {
+                const isActive = step.href ? pathname === step.href : step.paths!.includes(pathname);
+                return (
+                  <div
+                    key={step.number}
+                    className={`relative z-10 rounded-2xl border p-2.5 ${
+                      isActive ? "border-[#a3321f] bg-[#f6e4e0]" : "border-stone-200 bg-white"
                     }`}
                   >
-                    {n.label}
-                  </Link>
-                ))}
-              </div>
+                    <Link
+                      href={step.href ?? step.subItems![0].href}
+                      className="flex items-center gap-2.5"
+                    >
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-4 ring-white ${
+                          isActive ? "bg-[#a3321f] text-white" : "bg-stone-100 text-stone-400"
+                        }`}
+                      >
+                        {step.number}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold ${isActive ? "text-[#a3321f]" : "text-stone-800"}`}>
+                          {step.label}
+                        </p>
+                        <p className="truncate text-[11px] text-stone-400">{step.desc}</p>
+                      </div>
+                    </Link>
+                    {step.subItems && (
+                      <div className="mt-2 flex flex-col gap-0.5 border-t border-stone-200/70 pt-2 pl-9">
+                        {step.subItems.map((s) => (
+                          <Link
+                            key={s.href}
+                            href={s.href}
+                            className={`rounded-md px-2 py-1 text-xs ${
+                              pathname === s.href
+                                ? "font-semibold text-[#a3321f]"
+                                : "text-stone-500 hover:text-stone-800"
+                            }`}
+                          >
+                            {s.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </div>
         </nav>
 
         <div className="space-y-0.5 border-t border-stone-200 px-3 py-3">
