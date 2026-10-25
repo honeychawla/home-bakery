@@ -61,6 +61,11 @@ create table if not exists ingredients (
   base_unit text not null default 'g',             -- g | ml | unit
   base_qty numeric(12,2) not null default 1,       -- base units per purchase (e.g. 1890)
   price_effective_date date not null default current_date,
+  -- restock prediction: stock on hand (base units; null = untracked) and, for
+  -- non-recipe consumables like packaging, consumption per tart sold
+  stock_qty numeric(12,2),
+  stock_updated_at timestamptz,
+  usage_per_tart numeric(10,4),
   created_at timestamptz not null default now()
 );
 

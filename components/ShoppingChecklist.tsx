@@ -12,6 +12,8 @@ export type ChecklistLine = {
   totalBase: number;
   baseUnit: string;
   estCost: number;
+  baseQtyPerPurchase: number; // for the stock bump on check-off
+  tracked: boolean;           // stock_qty is set → bump on check-off
 };
 
 // Grocery-run checklist: big tap targets for in-store use on a phone.
@@ -35,20 +37,38 @@ export default function ShoppingChecklist({
   async function toggle(id: string) {
     const supabase = createClient();
     const next = new Set(checked);
-    if (next.has(id)) {
-      next.delete(id);
-      setChecked(next); // optimistic
+    const unchecking = next.has(id);
+    if (unchecking) next.delete(id);
+    else next.add(id);
+    setChecked(next); // optimistic
+
+    if (unchecking) {
       await supabase
         .from("shopping_checks")
         .delete()
         .eq("week_label", weekLabel)
         .eq("ingredient_id", id);
     } else {
-      next.add(id);
-      setChecked(next);
       await supabase
         .from("shopping_checks")
         .upsert({ week_label: weekLabel, ingredient_id: id }, { onConflict: "week_label,ingredient_id" });
+    }
+
+    // Buying tops up tracked stock; unchecking takes it back out.
+    const line = lines.find((l) => l.ingredientId === id);
+    if (line?.tracked) {
+      const delta = line.purchases * line.baseQtyPerPurchase * (unchecking ? -1 : 1);
+      const { data: ing } = await supabase
+        .from("ingredients")
+        .select("stock_qty")
+        .eq("id", id)
+        .single();
+      if (ing?.stock_qty != null) {
+        await supabase
+          .from("ingredients")
+          .update({ stock_qty: Math.max(0, Number(ing.stock_qty) + delta) })
+          .eq("id", id);
+      }
     }
   }
 

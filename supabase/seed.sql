@@ -118,6 +118,15 @@ insert into pickup_slots (day_of_week, start_time, end_time, location_id, cutoff
   (5, '16:30', '17:00', (select id from pickup_locations where label_en like 'SLU Nitro%'), 21),
   (6, '15:00', '15:30', (select id from pickup_locations where label_en like 'Bellevue%'), 21);
 
+-- Packaging consumables (consumed per tart sold, not per recipe) + demo stock
+insert into ingredients (name, purchase_qty, purchase_unit, purchase_cost, base_unit, base_qty, usage_per_tart) values
+  ('Cupcake boxes (4-ct)', 1, '100-box case', 33.99, 'unit', 100, 0.25),
+  ('Tart tins (foil)', 1, 'pack of 200', 12.99, 'unit', 200, 1)
+on conflict (name) do nothing;
+update ingredients set stock_qty = 18, stock_updated_at = now() where name = 'Eggs';
+update ingredients set stock_qty = 30, stock_updated_at = now() where name = 'Cupcake boxes (4-ct)';
+update ingredients set stock_qty = 3000, stock_updated_at = now() where name = 'Whole milk';
+
 -- ============ Weekly production plan (custom steps) ============
 insert into plan_steps (title, day_of_week, at_time, notes, sort_order) values
   ('Post preorder link', 2, '10:00', 'Instagram, WeChat, Xiaohongshu + website menu update', 1),

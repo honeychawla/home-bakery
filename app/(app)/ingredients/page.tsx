@@ -27,6 +27,7 @@ export default async function IngredientsPage() {
               <th className="px-2 py-2 font-medium">You buy</th>
               <th className="px-2 py-2 font-medium">Price</th>
               <th className="px-2 py-2 font-medium">= per base unit</th>
+              <th className="px-2 py-2 font-medium">Stock on hand</th>
               <th className="px-2 py-2" />
             </tr>
           </thead>

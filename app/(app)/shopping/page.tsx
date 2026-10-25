@@ -4,6 +4,7 @@ import ShoppingChecklist from "@/components/ShoppingChecklist";
 import { createClient } from "@/lib/supabase/server";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
 import { shoppingList } from "@/lib/costing";
+import { restockReport } from "@/lib/restock";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,11 @@ export default async function ShoppingPage({
   const { week } = await searchParams;
   const weeks = await getWeekLabels();
   const activeWeek = week ?? weeks[0];
-  const [orders, catalog] = await Promise.all([getOrders(activeWeek), getCatalog()]);
+  const [orders, allOrders, catalog] = await Promise.all([
+    getOrders(activeWeek),
+    getOrders(), // all weeks — consumption history for restock projection
+    getCatalog(),
+  ]);
 
   const productsById = new Map(catalog.products.map((p) => [p.id, p]));
   const { lines, missingRecipes } = shoppingList(
@@ -31,6 +36,15 @@ export default async function ShoppingPage({
     .select("ingredient_id")
     .eq("week_label", activeWeek);
   const initialChecked = (checks ?? []).map((c) => c.ingredient_id);
+
+  const restock = restockReport(
+    allOrders,
+    catalog.products,
+    catalog.recipeLines,
+    catalog.ingredients
+  );
+  const attention = restock.filter((r) => r.status === "low" || r.status === "soon");
+  const untrackedCount = restock.filter((r) => r.status === "untracked").length;
 
   return (
     <div className="space-y-5">
@@ -62,6 +76,45 @@ export default async function ShoppingPage({
         check them off as you shop — checks sync between your computer and phone.
       </p>
 
+      {attention.length > 0 && (
+        <section className="rounded-2xl border border-red-200 bg-red-50/70 p-4 print:hidden">
+          <h2 className="text-sm font-bold text-red-900">📉 Restock radar</h2>
+          <p className="mt-0.5 text-[11px] text-stone-500">
+            Projected from your stock-on-hand and recent weekly usage — not tied to this
+            week&apos;s orders. Checking items off below tops stock back up automatically.
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {attention.map((r) => (
+              <li key={r.ingredient.id} className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium">
+                  {r.ingredient.name}
+                  <span
+                    className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      r.status === "low" ? "bg-red-500 text-white" : "bg-orange-200 text-orange-900"
+                    }`}
+                  >
+                    {r.status === "low" ? "running low" : "reorder soon"}
+                  </span>
+                </span>
+                <span className="text-xs text-stone-500">
+                  ~{Math.round(r.stockNow ?? 0)} {r.ingredient.base_unit} left ·{" "}
+                  {r.weeksLeft != null ? `${r.weeksLeft.toFixed(1)} wk at current pace` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {untrackedCount > 0 && (
+            <p className="mt-2 text-[11px] text-stone-400">
+              {untrackedCount} ingredients untracked — set stock-on-hand on the{" "}
+              <Link href="/ingredients" className="underline">
+                Ingredients
+              </Link>{" "}
+              page to get predictions for them too.
+            </p>
+          )}
+        </section>
+      )}
+
       <ShoppingChecklist
         weekLabel={activeWeek}
         initialChecked={initialChecked}
@@ -73,6 +126,8 @@ export default async function ShoppingPage({
           totalBase: l.totalBase,
           baseUnit: l.ingredient.base_unit,
           estCost: l.estCost,
+          baseQtyPerPurchase: Number(l.ingredient.base_qty),
+          tracked: l.ingredient.stock_qty != null,
         }))}
       />
 

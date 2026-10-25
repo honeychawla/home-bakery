@@ -23,6 +23,9 @@ export type Ingredient = {
   base_unit: string;
   base_qty: number;
   price_effective_date: string;
+  stock_qty: number | null;        // on-hand, in base units (null = untracked)
+  stock_updated_at: string | null;
+  usage_per_tart: number | null;   // for non-recipe consumables (packaging)
 };
 
 export type ProductIngredient = {
