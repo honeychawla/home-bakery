@@ -76,8 +76,8 @@ insert into ingredients (name, purchase_qty, purchase_unit, purchase_cost, base_
   ('Glutinous rice flour', 1, '16 oz bag', 2.49, 'g', 454),
   ('Condensed milk', 1, '14 oz can', 2.79, 'g', 397);
 
--- Structured per-batch recipes for four products (others use est_filling_cost;
--- the AI recipe importer can parse the rest from the cost sheet's free text).
+-- Structured per-batch recipes (gram-precise flavors first; the rest of the
+-- menu is completed in the block at the end of this file).
 insert into product_ingredients (product_id, ingredient_id, qty_base, note)
 select p.id, i.id, r.qty, r.note from (values
   ('Classic Portuguese Egg Tart', 'Whole milk', 80, null),
@@ -232,5 +232,75 @@ end $$;
 
 drop function _seed_order(text, timestamptz, numeric, numeric, text, text, text, text, text);
 drop function _seed_item(uuid, int, text, numeric);
+
+-- ============ Full ingredient library + recipes for every flavor ============
+-- (from the cost tracker; prices are estimates to refine from receipts)
+
+insert into ingredients (name, purchase_qty, purchase_unit, purchase_cost, base_unit, base_qty) values
+  ('Mascarpone', 1, '8 oz tub', 5.49, 'g', 227),
+  ('Instant coffee powder', 1, '3 oz jar', 4.99, 'g', 85),
+  ('Cocoa powder', 1, '8 oz tin', 3.99, 'g', 227),
+  ('Taro', 1, 'lb', 2.49, 'g', 454),
+  ('Purple rice', 1, '2 lb bag', 5.99, 'g', 907),
+  ('Purple sweet potato powder', 1, '100 g bag', 6.99, 'g', 100),
+  ('Lychee (canned, drained)', 1, '20 oz can', 3.49, 'g', 250),
+  ('Dried rose petals', 1, '50 g bag', 5.99, 'g', 50),
+  ('Chestnut pieces (cooked)', 1, '100 g pack', 3.99, 'g', 100),
+  ('Pork floss', 1, '8 oz bag', 8.99, 'g', 227),
+  ('Salted egg yolks', 1, 'pack of 6', 6.99, 'unit', 6),
+  ('Chocolate chips', 1, '12 oz bag', 3.99, 'g', 340),
+  ('Red bean paste', 1, '500 g tub', 4.99, 'g', 500),
+  ('Matcha powder', 1, '100 g tin', 9.99, 'g', 100),
+  ('Jiuniang (sweet fermented rice)', 1, '500 g jar', 4.99, 'g', 500),
+  ('Osmanthus honey', 1, '250 g jar', 7.99, 'g', 250),
+  ('Mochi balls', 1, 'pack of 30', 4.99, 'unit', 30),
+  ('Soy milk powder', 1, 'bag (6 tarts)', 9.99, 'unit', 1),
+  ('Soy flour (kinako)', 1, '200 g bag', 3.49, 'g', 200),
+  ('Durian (frozen)', 1, 'lb', 9.99, 'g', 454),
+  ('Persimmon', 1, 'each', 1.50, 'unit', 1),
+  ('Oreo cookies', 1, 'family pack (36)', 4.49, 'unit', 36)
+on conflict (name) do nothing;
+
+-- Per-batch recipes (batch yields match the products table / cost sheet).
+insert into product_ingredients (product_id, ingredient_id, qty_base, note)
+select p.id, i.id, r.qty, r.note from (values
+  ('Tiramisu Egg Tart', 'Mascarpone', 25, null),
+  ('Tiramisu Egg Tart', 'Heavy cream', 12.5, null),
+  ('Tiramisu Egg Tart', 'Instant coffee powder', 2, null),
+  ('Tiramisu Egg Tart', 'Sugar', 2, null),
+  ('Tiramisu Egg Tart', 'Cocoa powder', 1, 'dusting'),
+  ('Purple Rice Taro Egg Tart', 'Taro', 380, 'taro paste'),
+  ('Purple Rice Taro Egg Tart', 'Sugar', 28, null),
+  ('Purple Rice Taro Egg Tart', 'Condensed milk', 33, 'paste 10 + rice 23'),
+  ('Purple Rice Taro Egg Tart', 'Purple sweet potato powder', 3, null),
+  ('Purple Rice Taro Egg Tart', 'Whole milk', 110, null),
+  ('Purple Rice Taro Egg Tart', 'Butter', 26, 'paste 18 + rice 8'),
+  ('Purple Rice Taro Egg Tart', 'Purple rice', 120, null),
+  ('Lychee Cream Cheese Egg Tart', 'Lychee (canned, drained)', 35, 'whole 15 + diced 20'),
+  ('Lychee Cream Cheese Egg Tart', 'Cream cheese', 25, null),
+  ('Lychee Cream Cheese Egg Tart', 'Dried rose petals', 1, 'garnish'),
+  ('Chestnut Egg Tart', 'Chestnut pieces (cooked)', 20, '~4 pcs'),
+  ('Chestnut Egg Tart', 'Heavy cream', 10, 'whipped'),
+  ('Pork Floss Salted Egg Tart', 'Salted egg yolks', 0.5, null),
+  ('Pork Floss Salted Egg Tart', 'Pork floss', 5, null),
+  ('Lava Chocolate Egg Tart', 'Chocolate chips', 10, '~8 pcs'),
+  ('Lava Chocolate Egg Tart', 'Cocoa powder', 2, null),
+  ('Matcha Red Bean Tart', 'Red bean paste', 30, null),
+  ('Matcha Red Bean Tart', 'Matcha powder', 1, null),
+  ('Osmanthus Rice Wine Egg Tart', 'Jiuniang (sweet fermented rice)', 15, null),
+  ('Osmanthus Rice Wine Egg Tart', 'Mochi balls', 3, null),
+  ('Osmanthus Rice Wine Egg Tart', 'Osmanthus honey', 5, null),
+  ('Soy Milk Mochi Egg Tart', 'Soy milk powder', 1, '1 bag = 6 tarts'),
+  ('Soy Milk Mochi Egg Tart', 'Mochi balls', 18, '3 per tart'),
+  ('Soy Milk Mochi Egg Tart', 'Soy flour (kinako)', 18, 'dusting, 3 g per tart'),
+  ('Roasted Durian Egg Tart', 'Durian (frozen)', 25, null),
+  ('Persimmon Egg Tart', 'Persimmon', 1, '1 fruit = 4 tarts'),
+  ('Oreo Brownie Egg Tart', 'Oreo cookies', 2, null),
+  ('Oreo Brownie Egg Tart', 'Whole milk', 10, null)
+) as r(product, ingredient, qty, note)
+join products p on p.name_en = r.product
+join ingredients i on i.name = r.ingredient
+on conflict (product_id, ingredient_id) do nothing;
+
 
 commit;
