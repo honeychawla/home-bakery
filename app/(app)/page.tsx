@@ -1,11 +1,14 @@
 import Link from "next/link";
 import PayBadge from "@/components/PayBadge";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
-import { orderEconomics, unitCost } from "@/lib/costing";
+import { bakeSheet, orderEconomics, shoppingList, unitCost } from "@/lib/costing";
 import { money, pct } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+// Homepage = business dashboard: what's happening this week at a glance.
+// The nav is the workflow (Shop → Orders → Bake → Deliver); each panel here
+// deep-links into its step.
 export default async function Dashboard({
   searchParams,
 }: {
@@ -17,6 +20,7 @@ export default async function Dashboard({
   const [orders, catalog] = await Promise.all([getOrders(activeWeek), getCatalog()]);
 
   const ingredientsById = new Map(catalog.ingredients.map((i) => [i.id, i]));
+  const productsById = new Map(catalog.products.map((p) => [p.id, p]));
   const unitCostById = new Map(
     catalog.products.map((p) => [p.id, unitCost(p, catalog.recipeLines, ingredientsById).total])
   );
@@ -33,11 +37,29 @@ export default async function Dashboard({
     (s, o) => s + (o.order_items ?? []).reduce((t, i) => t + i.qty, 0),
     0
   );
+  const pickedUp = paid.filter((o) => o.status === "completed").length;
+
+  // Bake at a glance: totals per pickup day (paid only)
+  const sheet = bakeSheet(orders, productsById, catalog.groups);
+  const bakeDays = [...sheet.entries()]
+    .map(([day, groups]) => ({
+      day,
+      total: groups.reduce((s, g) => s + g.totalUnits, 0),
+      top: groups
+        .flatMap((g) => g.lines)
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 3),
+    }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+
+  // Shopping at a glance: biggest purchases
+  const shop = shoppingList(orders, productsById, catalog.recipeLines, catalog.ingredients);
+  const shopTotal = shop.lines.reduce((s, l) => s + l.estCost, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">This week</h1>
+        <h1 className="text-xl font-bold">Dashboard</h1>
         <div className="flex items-center gap-2">
           <WeekPicker weeks={weeks} active={activeWeek} />
           <Link
@@ -49,8 +71,13 @@ export default async function Dashboard({
         </div>
       </div>
 
+      {/* What's happening: the week in numbers */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Paid orders" value={`${paid.length}`} sub={`${tarts} tarts`} />
+        <Stat
+          label="Paid orders"
+          value={`${paid.length}`}
+          sub={`${tarts} tarts · ${pickedUp} picked up${unpaid.length ? ` · ${unpaid.length} unpaid` : ""}`}
+        />
         <Stat label="Received" value={money(received)} sub={`${money(revenue)} before fees`} />
         <Stat label="Est. cost" value={money(cost)} sub="ingredients + packaging" />
         <Stat
@@ -64,8 +91,8 @@ export default async function Dashboard({
       {unpaid.length > 0 && (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
           <h2 className="text-sm font-bold text-orange-900">
-            ⚠️ {unpaid.length} unpaid {unpaid.length === 1 ? "order" : "orders"} — not counted in
-            the bake sheet
+            ⚠️ {unpaid.length} unpaid {unpaid.length === 1 ? "order" : "orders"} — excluded from
+            bake &amp; shopping until marked paid
           </h2>
           <ul className="mt-2 space-y-1">
             {unpaid.map((o) => (
@@ -80,11 +107,66 @@ export default async function Dashboard({
         </section>
       )}
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <CardLink href="/shopping" title="🛒 Shopping list" desc="Aggregated ingredients for the week, in store units." />
-        <CardLink href="/bake" title="🥧 Bake sheet" desc="What to bake per pickup day, batches rounded up." />
-        <CardLink href="/schedule" title="📍 Pickup sheet" desc="Who's collecting what at each slot, check-off as you go." />
-      </section>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Bake at a glance */}
+        <section className="rounded-2xl border border-amber-100 bg-white p-4">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-bold text-stone-600">🥧 To bake</h2>
+            <Link href="/bake" className="text-xs text-amber-700 underline">
+              Full bake sheet →
+            </Link>
+          </div>
+          {bakeDays.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-400">Nothing to bake yet.</p>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {bakeDays.map((d) => (
+                <div key={d.day} className="rounded-xl bg-amber-50/60 p-3">
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="font-semibold">{d.day}</span>
+                    <span className="font-bold">{d.total} tarts</span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-stone-500">
+                    {d.top.map((l) => `${l.qty}× ${l.product.name_en}`).join(" · ")}
+                    {d.top.length < 3 ? "" : " · …"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Shopping at a glance */}
+        <section className="rounded-2xl border border-amber-100 bg-white p-4">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-bold text-stone-600">🛒 To buy</h2>
+            <Link href="/shopping" className="text-xs text-amber-700 underline">
+              Full shopping list →
+            </Link>
+          </div>
+          {shop.lines.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-400">Nothing to buy yet.</p>
+          ) : (
+            <>
+              <ul className="mt-3 space-y-1.5 text-sm">
+                {shop.lines.slice(0, 6).map((l) => (
+                  <li key={l.ingredient.id} className="flex justify-between">
+                    <span>
+                      {l.purchases} × {l.ingredient.purchase_unit}{" "}
+                      <span className="font-medium">{l.ingredient.name}</span>
+                    </span>
+                    <span className="text-stone-400">{money(l.estCost)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 border-t border-amber-50 pt-2 text-xs text-stone-500">
+                {shop.lines.length > 6 && `+ ${shop.lines.length - 6} more items · `}
+                est. total <b>{money(shopTotal)}</b>
+              </p>
+            </>
+          )}
+        </section>
+      </div>
 
       <section>
         <h2 className="mb-2 text-sm font-bold text-stone-600">Latest orders — {activeWeek}</h2>
@@ -121,15 +203,6 @@ function Stat({ label, value, sub, highlight }: { label: string; value: string; 
       <p className="mt-1 text-xl font-bold">{value}</p>
       {sub && <p className="text-[11px] text-stone-400">{sub}</p>}
     </div>
-  );
-}
-
-function CardLink({ href, title, desc }: { href: string; title: string; desc: string }) {
-  return (
-    <Link href={href} className="rounded-2xl border border-amber-100 bg-white p-4 hover:border-amber-300">
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{desc}</p>
-    </Link>
   );
 }
 
