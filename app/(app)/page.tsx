@@ -81,8 +81,8 @@ export default async function Dashboard({
       )}
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <CardLink href="/bake" title="🥧 Bake sheet" desc="What to bake per pickup day, batches rounded up." />
         <CardLink href="/shopping" title="🛒 Shopping list" desc="Aggregated ingredients for the week, in store units." />
+        <CardLink href="/bake" title="🥧 Bake sheet" desc="What to bake per pickup day, batches rounded up." />
         <CardLink href="/schedule" title="📍 Pickup sheet" desc="Who's collecting what at each slot, check-off as you go." />
       </section>
 

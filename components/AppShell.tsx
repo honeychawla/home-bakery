@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// Ordered to match the baker's real week: shop → manage orders → bake → deliver.
 const NAV = [
   { href: "/", label: "Home", icon: "🏠" },
+  { href: "/shopping", label: "Shop", icon: "🛒" },
   { href: "/orders", label: "Orders", icon: "🧾" },
   { href: "/bake", label: "Bake", icon: "🥧" },
-  { href: "/shopping", label: "Shop", icon: "🛒" },
   { href: "/schedule", label: "Pickups", icon: "📍" },
   { href: "/products", label: "Menu", icon: "📋" },
 ];
