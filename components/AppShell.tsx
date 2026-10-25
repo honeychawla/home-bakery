@@ -16,11 +16,11 @@ const NAV = [
   { href: "/insights", label: "Insights" },
 ];
 
-// Grouped for the sidebar: overview, then the workflow in order, then catalog.
+// Grouped for the sidebar: overview, then the workflow in order, then catalog/reports.
 const NAV_GROUPS = [
   { label: null, items: NAV.filter((n) => n.href === "/") },
   { label: "Workflow", items: NAV.filter((n) => ["/plan", "/shopping", "/orders", "/bake", "/schedule"].includes(n.href)) },
-  { label: "Catalog", items: NAV.filter((n) => n.href === "/products") },
+  { label: "Catalog", items: NAV.filter((n) => ["/products", "/insights"].includes(n.href)) },
 ];
 
 export default function AppShell({
