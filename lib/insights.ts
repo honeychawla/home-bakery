@@ -45,14 +45,23 @@ function tartsPer(name: string): number {
   return m ? Number(m[1]) : 1;
 }
 
+// Today's date in the bakery's timezone (Seattle), as YYYY-MM-DD.
+export function todayIso(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+}
+
+// Orders whose pickup date is still in the future are left out: those weeks
+// haven't happened yet, so they would only show up as misleading partial bars.
 export function toInsightOrders(
   orders: Order[],
   productsById: Map<string, Product>,
-  unitCostById: Map<string, number>
+  unitCostById: Map<string, number>,
+  today = todayIso()
 ): InsightOrder[] {
   const out: InsightOrder[] = [];
   for (const o of orders) {
     if (o.status === "cancelled" || !o.week_label) continue; // no week = can't place it on the chart
+    if (pickupDateOf(o.pickup_day, o.placed_at) > today) continue;
     const eco = orderEconomics(o, unitCostById);
     const items = (o.order_items ?? []).map((i) => {
       const product = i.product_id ? productsById.get(i.product_id) : undefined;
