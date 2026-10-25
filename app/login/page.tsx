@@ -33,9 +33,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-amber-50 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm border border-amber-100">
-        <h1 className="text-2xl font-bold text-stone-800">🥧 Order Hub</h1>
+        <h1 className="text-2xl font-bold text-stone-800">Preheat</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Sign in to manage your bakery.
+          Order management for home bakers.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <input

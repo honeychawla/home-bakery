@@ -1,4 +1,6 @@
-# Home Baker Order Hub
+# Preheat
+
+Order management for home bakers.
 
 One place for home bakers to track orders, see real cost and profit, know exactly what to bake and buy, and keep customers in the loop — instead of juggling spreadsheets, notes apps, and DM threads.
 
@@ -175,4 +177,4 @@ MIT
 
 ---
 
-Built with Claude for a small-business hackathon, piloted with Tart Theory 🥧
+Built with Claude for a small-business hackathon, piloted with Tart Theory.

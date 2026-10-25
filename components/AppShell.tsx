@@ -6,14 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 
 // Ordered to match the baker's real week: shop → manage orders → bake → deliver.
 const NAV = [
-  { href: "/", label: "Home", icon: "🏠" },
-  { href: "/plan", label: "Plan", icon: "📅" },
-  { href: "/shopping", label: "Shop", icon: "🛒" },
-  { href: "/orders", label: "Orders", icon: "🧾" },
-  { href: "/bake", label: "Bake", icon: "🥧" },
-  { href: "/schedule", label: "Deliver", icon: "📍" },
-  { href: "/products", label: "Menu", icon: "📋" },
-  { href: "/insights", label: "Insights", icon: "📈" },
+  { href: "/", label: "Home" },
+  { href: "/plan", label: "Plan" },
+  { href: "/shopping", label: "Shop" },
+  { href: "/orders", label: "Orders" },
+  { href: "/bake", label: "Bake" },
+  { href: "/schedule", label: "Deliver" },
+  { href: "/products", label: "Menu" },
 ];
 
 export default function AppShell({
@@ -36,8 +35,9 @@ export default function AppShell({
     <div className="min-h-screen bg-amber-50/60 text-stone-800">
       <header className="sticky top-0 z-20 border-b border-amber-100 bg-white/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/" className="font-bold">
-            🥧 {bakeryName}
+          <Link href="/" className="flex items-baseline gap-2">
+            <span className="font-bold">Preheat</span>
+            <span className="text-xs text-stone-400">· {bakeryName}</span>
           </Link>
           <nav className="hidden gap-1 sm:flex">
             {NAV.map((n) => (
@@ -60,7 +60,7 @@ export default function AppShell({
               className="rounded-lg px-2 py-1.5 text-sm text-stone-500 hover:bg-amber-50"
               title="Settings"
             >
-              ⚙️
+              Settings
             </Link>
             <button
               onClick={signOut}
@@ -80,11 +80,10 @@ export default function AppShell({
           <Link
             key={n.href}
             href={n.href}
-            className={`flex flex-col items-center rounded-lg px-2 py-1 text-[10px] ${
+            className={`flex flex-col items-center rounded-lg px-2 py-1.5 text-[11px] ${
               pathname === n.href ? "font-bold text-amber-700" : "text-stone-500"
             }`}
           >
-            <span className="text-base leading-none">{n.icon}</span>
             {n.label}
           </Link>
         ))}

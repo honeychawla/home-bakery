@@ -114,7 +114,7 @@ export default function OrdersCalendar({ orders }: { orders: Order[] }) {
                       {dayOrders.length}
                     </span>
                     <span className="mt-0.5 text-[9px] text-stone-400">
-                      {paidTarts > 0 && `${paidTarts}🥧`}
+                      {paidTarts > 0 && `${paidTarts} tarts`}
                       {hasUnpaid && <span className="text-orange-500"> !</span>}
                     </span>
                   </>

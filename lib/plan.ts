@@ -179,7 +179,7 @@ export function buildIcs(items: TimelineItem[]): string {
       `UID:${item.key}@home-bakery-order-hub`,
       `DTSTART:${dtstart}`,
       `RRULE:FREQ=WEEKLY;BYDAY=${byday[item.dayOfWeek]}`,
-      `SUMMARY:🥧 ${item.title.replace(/[,;\\]/g, " ")}`,
+      `SUMMARY:${item.title.replace(/[,;\\]/g, " ")}`,
       item.notes ? `DESCRIPTION:${item.notes.replace(/[,;\\]/g, " ")}` : "",
       "BEGIN:VALARM",
       "TRIGGER:-PT30M",

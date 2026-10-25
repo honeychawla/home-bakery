@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Order Hub",
-  description: "One place for home bakers: orders, costs, bake sheets, pickups.",
+  title: "Preheat",
+  description: "Preheat — order management for home bakers.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

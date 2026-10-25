@@ -122,7 +122,7 @@ export default async function Dashboard({
       {unpaid.length > 0 && (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
           <h2 className="text-sm font-bold text-orange-900">
-            ⚠️ {unpaid.length} unpaid {unpaid.length === 1 ? "order" : "orders"} — excluded from
+            {unpaid.length} unpaid {unpaid.length === 1 ? "order" : "orders"} — excluded from
             bake &amp; shopping until marked paid
           </h2>
           <ul className="mt-2 space-y-1">
@@ -142,7 +142,7 @@ export default async function Dashboard({
         {/* Bake at a glance */}
         <section className="rounded-2xl border border-amber-100 bg-white p-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-bold text-stone-600">🥧 To bake</h2>
+            <h2 className="text-sm font-bold text-stone-600">To bake</h2>
             <Link href="/bake" className="text-xs text-amber-700 underline">
               Full bake sheet →
             </Link>
@@ -170,7 +170,7 @@ export default async function Dashboard({
         {/* Shopping at a glance */}
         <section className="rounded-2xl border border-amber-100 bg-white p-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-bold text-stone-600">🛒 To buy</h2>
+            <h2 className="text-sm font-bold text-stone-600">To buy</h2>
             <Link href="/shopping" className="text-xs text-amber-700 underline">
               Full shopping list →
             </Link>
