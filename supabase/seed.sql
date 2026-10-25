@@ -153,9 +153,9 @@ insert into message_templates (name, body_en, body_zh) values
 insert into weeks (week_label, start_date, status) values ('Oct 23-24', '2026-10-23', 'open');
 
 insert into customers (name, venmo_name) values
-  ('Jiayue', 'Jiayue'), ('Shangen', 'Shangen'), ('Yuhan', 'Yuhan'),
-  ('Wujing', 'Wujing'), ('Naomi', 'Naomi'), ('Samantha', 'Samantha'),
-  ('Yuyao', 'Yuyao'), ('Emily/Lu', 'Emily/Lu'), ('Yiren', 'Yiren'), ('Ziwen', 'Ziwen');
+  ('Customer 1', 'Customer 1'), ('Customer 2', 'Customer 2'), ('Customer 3', 'Customer 3'),
+  ('Customer 4', 'Customer 4'), ('Customer 5', 'Customer 5'), ('Customer 6', 'Customer 6'),
+  ('Customer 7', 'Customer 7'), ('Customer 8', 'Customer 8'), ('Customer 9', 'Customer 9'), ('Customer 10', 'Customer 10');
 
 create or replace function _seed_order(
   p_num text, p_placed timestamptz, p_total numeric, p_received numeric,
@@ -186,17 +186,17 @@ end $$;
 do $$
 declare o uuid;
 begin
-  o := _seed_order('TT-5342', '2026-10-20 14:33-07', 20, 19.52, 'Jiayue', 'Fri 10/23', '3:30–4:00 PM', 'Timeless Tea parking lot (U District)');
+  o := _seed_order('TT-5342', '2026-10-20 14:33-07', 20, 19.52, 'Customer 1', 'Fri 10/23', '3:30–4:00 PM', 'Timeless Tea parking lot (U District)');
   perform _seed_item(o, 1, 'Matcha Red Bean Tart', 6);
   perform _seed_item(o, 1, 'Oreo Brownie Egg Tart', 6);
   perform _seed_item(o, 1, 'Purple Rice Taro Egg Tart', 6);
   perform _seed_item(o, 1, 'Black Sesame Mochi Tart', 6);
 
-  o := _seed_order('TT-3984', '2026-10-18 11:17-07', 36, 36.00, 'Shangen', 'Fri 10/23', '3:30–4:00 PM', 'Timeless Tea parking lot (U District)');
+  o := _seed_order('TT-3984', '2026-10-18 11:17-07', 36, 36.00, 'Customer 2', 'Fri 10/23', '3:30–4:00 PM', 'Timeless Tea parking lot (U District)');
   perform _seed_item(o, 4, 'Original Portuguese Style', 4);
   perform _seed_item(o, 4, 'Lava Cheese Tart', 6);
 
-  o := _seed_order('TT-2550', '2026-10-19 10:49-07', 40, 40.00, 'Yuhan', 'Fri 10/23', '4:30–5:00 PM', 'Nitro Parking Garage (South Lake Union)');
+  o := _seed_order('TT-2550', '2026-10-19 10:49-07', 40, 40.00, 'Customer 3', 'Fri 10/23', '4:30–5:00 PM', 'Nitro Parking Garage (South Lake Union)');
   perform _seed_item(o, 1, 'Lychee Cream Cheese Eggtart', 6);
   perform _seed_item(o, 1, 'Pork Floss Salted Egg Tart', 6);
   perform _seed_item(o, 1, 'Purple Rice Taro Egg Tart', 6);
@@ -206,37 +206,37 @@ begin
   perform _seed_item(o, 1, 'Black Sesame Mochi Tart', 6);
   perform _seed_item(o, 1, 'Lava Cheese Tart', 6);
 
-  o := _seed_order('TT-8103', '2026-10-21 09:56-07', 46, 45.03, 'Wujing', 'Fri 10/23', '4:30–5:00 PM', 'SLU Nitro Parking Garage (South) · P1 elevator lobby');
+  o := _seed_order('TT-8103', '2026-10-21 09:56-07', 46, 45.03, 'Customer 4', 'Fri 10/23', '4:30–5:00 PM', 'SLU Nitro Parking Garage (South) · P1 elevator lobby');
   perform _seed_item(o, 1, 'Halloween Box of 6', 40);
   perform _seed_item(o, 1, 'Persimmon Egg Tart', 6);
 
-  o := _seed_order('TT-7168', '2026-10-23 13:38-07', 20, 19.52, 'Naomi', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
+  o := _seed_order('TT-7168', '2026-10-23 13:38-07', 20, 19.52, 'Customer 5', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
   perform _seed_item(o, 3, 'Roasted Durian Egg Tart', 6);
   perform _seed_item(o, 1, 'Pork Floss Salted Egg Tart', 6);
 
-  o := _seed_order('TT-1926', '2026-10-20 22:29-07', 20, 19.52, 'Samantha', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
+  o := _seed_order('TT-1926', '2026-10-20 22:29-07', 20, 19.52, 'Customer 6', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
   perform _seed_item(o, 4, 'Lychee Cream Cheese Egg Tart', 6);
 
-  o := _seed_order('TT-6289', '2026-10-22 17:02-07', 20, 20.00, 'Yuyao', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
+  o := _seed_order('TT-6289', '2026-10-22 17:02-07', 20, 20.00, 'Customer 7', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
   perform _seed_item(o, 1, 'Persimmon Egg Tart', 6);
   perform _seed_item(o, 1, 'Chestnut Egg Tart', 6);
   perform _seed_item(o, 1, 'Corn Egg Tart', 6);
   perform _seed_item(o, 1, 'Purple Rice Taro Egg Tart', 6);
 
-  o := _seed_order('TT-5583', '2026-10-22 17:22-07', 20, 20.00, 'Emily/Lu', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
+  o := _seed_order('TT-5583', '2026-10-22 17:22-07', 20, 20.00, 'Customer 8', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
   perform _seed_item(o, 1, 'Persimmon Egg Tart', 6);
   perform _seed_item(o, 1, 'Corn Egg Tart', 6);
   perform _seed_item(o, 1, 'Pork Floss Salted Egg Tart', 6);
   perform _seed_item(o, 1, 'Classic Portuguese Egg Tart', 4);
 
-  o := _seed_order('TT-4672', '2026-10-20 22:30-07', 26, 25.41, 'Yiren', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot', 'use the 6 pack box');
+  o := _seed_order('TT-4672', '2026-10-20 22:30-07', 26, 25.41, 'Customer 9', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot', 'use the 6 pack box');
   perform _seed_item(o, 1, 'Persimmon Egg Tart', 6);
   perform _seed_item(o, 1, 'Chestnut Egg Tart', 6);
   perform _seed_item(o, 1, 'Corn Egg Tart', 6);
   perform _seed_item(o, 1, 'Osmanthus Rice Wine Egg Tart', 6);
   perform _seed_item(o, 1, 'Tiramisu Egg Tart', 6);
 
-  o := _seed_order('TT-8890', '2026-10-22 15:35-07', 40, 39.14, 'Ziwen', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
+  o := _seed_order('TT-8890', '2026-10-22 15:35-07', 40, 39.14, 'Customer 10', 'Sat 10/24', '3:00–3:30 PM', 'Bellevue T&T Supermarket parking lot');
   perform _seed_item(o, 1, 'Persimmon Egg Tart', 6);
   perform _seed_item(o, 1, 'Corn Egg Tart', 6);
   perform _seed_item(o, 1, 'Osmanthus Rice Wine Egg Tart', 6);
