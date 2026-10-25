@@ -1,7 +1,8 @@
 import Link from "next/link";
 import PrintButton from "@/components/PrintButton";
+import RecipeRow from "@/components/RecipeRow";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
-import { bakeSheet } from "@/lib/costing";
+import { bakeSheet, recipeForQty } from "@/lib/costing";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function BakePage({
   const [orders, catalog] = await Promise.all([getOrders(activeWeek), getCatalog()]);
 
   const productsById = new Map(catalog.products.map((p) => [p.id, p]));
+  const ingredientsById = new Map(catalog.ingredients.map((i) => [i.id, i]));
   const sheet = bakeSheet(orders, productsById, catalog.groups);
   const days = [...sheet.keys()].sort();
   const unpaidCount = orders.filter(
@@ -76,7 +78,7 @@ export default async function BakePage({
       <p className="text-xs text-stone-500">
         Paid orders only{unpaidCount > 0 && (
           <span className="text-orange-600"> — {unpaidCount} unpaid order(s) excluded</span>
-        )}. Shared-base flavors are grouped and rounded up to whole batches.
+        )}. Shared-base flavors are grouped; totals are exact, not rounded to batches.
       </p>
 
       {days.length === 0 && (
@@ -153,13 +155,7 @@ export default async function BakePage({
                 <div key={idx}>
                   {g.group ? (
                     <p className="text-xs font-bold uppercase tracking-wide text-amber-700">
-                      {g.group.name} — {g.totalUnits} tarts → {g.batches} batch
-                      {g.batches === 1 ? "" : "es"} of {g.group.batch_size}
-                      {g.leftover ? (
-                        <span className="ml-1 font-normal normal-case text-stone-400">
-                          ({g.leftover} extra to sell)
-                        </span>
-                      ) : null}
+                      {g.group.name} — {g.totalUnits} tarts
                     </p>
                   ) : (
                     <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
@@ -168,15 +164,13 @@ export default async function BakePage({
                   )}
                   <ul className="mt-1 divide-y divide-amber-50">
                     {g.lines.map((l) => (
-                      <li key={l.product.id} className="flex justify-between py-1.5 text-sm">
-                        <span>
-                          {l.product.name_en}
-                          {l.product.name_zh && (
-                            <span className="ml-1 text-stone-400">{l.product.name_zh}</span>
-                          )}
-                        </span>
-                        <span className="font-bold tabular-nums">{l.qty}</span>
-                      </li>
+                      <RecipeRow
+                        key={l.product.id}
+                        nameEn={l.product.name_en}
+                        nameZh={l.product.name_zh}
+                        qty={l.qty}
+                        ingredients={recipeForQty(l.product, l.qty, catalog.recipeLines, ingredientsById)}
+                      />
                     ))}
                   </ul>
                 </div>

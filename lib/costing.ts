@@ -30,6 +30,36 @@ export function unitCost(
   return { filling: 0, packaging, total: packaging, source: "none" };
 }
 
+// ---------- Recipe (scaled to a bake-day quantity) ----------
+
+export type RecipeIngredientAmount = {
+  ingredient: Ingredient;
+  amount: number; // in the ingredient's base_unit, scaled to `qty`
+  note: string | null;
+};
+
+// How much of each ingredient to measure out for `qty` units of a product
+// today — not a purchase list, just the recipe scaled up. Empty when the
+// product has no structured recipe.
+export function recipeForQty(
+  product: Product,
+  qty: number,
+  recipeLines: ProductIngredient[],
+  ingredientsById: Map<string, Ingredient>
+): RecipeIngredientAmount[] {
+  if (product.batch_yield <= 0) return [];
+  const lines = recipeLines.filter((l) => l.product_id === product.id);
+  if (lines.length === 0) return [];
+  const scale = qty / product.batch_yield;
+  return lines
+    .map((l) => {
+      const ingredient = ingredientsById.get(l.ingredient_id);
+      if (!ingredient) return null;
+      return { ingredient, amount: Number(l.qty_base) * scale, note: l.note };
+    })
+    .filter((x): x is RecipeIngredientAmount => x !== null);
+}
+
 // ---------- Order economics ----------
 
 export type OrderEconomics = {
