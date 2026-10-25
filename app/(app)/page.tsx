@@ -209,13 +209,15 @@ export default async function Dashboard({
             <Link
               key={o.id}
               href={`/orders/${o.id}`}
-              className="flex items-center justify-between border-b border-amber-50 px-4 py-3 text-sm last:border-0 hover:bg-amber-50/50"
+              className="grid grid-cols-[5rem_minmax(0,1fr)_5.5rem_4.5rem_4rem] items-center gap-3 border-b border-amber-50 px-4 py-3 text-sm last:border-0 hover:bg-amber-50/50"
             >
               <span className="font-medium">{o.order_num}</span>
-              <span className="text-stone-500">{o.venmo_name ?? "—"}</span>
+              <span className="truncate text-stone-500">{o.venmo_name ?? "—"}</span>
               <span className="text-stone-500">{o.pickup_day ?? "—"}</span>
               <span>{money(o.total)}</span>
-              <PayBadge status={o.payment_status} />
+              <span className="justify-self-end">
+                <PayBadge status={o.payment_status} />
+              </span>
             </Link>
           ))}
         </div>

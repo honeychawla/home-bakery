@@ -128,12 +128,14 @@ export default async function OrdersPage({
               o.status === "cancelled" ? "opacity-40" : ""
             }`}
           >
-            <div className="flex items-center justify-between gap-2 text-sm">
+            <div className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem_4rem] items-center gap-3 text-sm sm:grid-cols-[5rem_minmax(0,1fr)_5.5rem_4.5rem_4rem]">
               <span className="font-semibold">{o.order_num}</span>
-              <span className="text-stone-500">{o.venmo_name ?? "—"}</span>
-              <span className="hidden text-stone-400 sm:inline">{o.pickup_day ?? "—"}</span>
+              <span className="truncate text-stone-500">{o.venmo_name ?? "—"}</span>
+              <span className="hidden text-stone-400 sm:block">{o.pickup_day ?? "—"}</span>
               <span className="font-medium">{money(o.total)}</span>
-              <PayBadge status={o.payment_status} />
+              <span className="justify-self-end">
+                <PayBadge status={o.payment_status} />
+              </span>
             </div>
             <p className="mt-1 truncate text-xs text-stone-400">
               {(o.order_items ?? []).map((i) => `${i.qty}× ${i.description.replace(/^\d+x\s*/i, "").replace(/\s*\(\$[\d.]+\)$/, "")}`).join(", ")}
