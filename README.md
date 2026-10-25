@@ -4,18 +4,28 @@ Order management for home bakers.
 
 One place for home bakers to track orders, see real cost and profit, know exactly what to bake and buy, and keep customers in the loop — instead of juggling spreadsheets, notes apps, and DM threads.
 
-Built for home bakers (cottage-food operators) and piloted with **Tart Theory**, a real Seattle egg-tart bakery taking weekly pre-orders with Friday/Saturday pickups.
+Built for home bakers (cottage-food operators) and piloted with **Tart Theory**, a real Seattle egg-tart bakery taking weekly pre-orders with Friday/Saturday pickups. The owner shared her real order and cost sheets, demoed her weekly routine, and co-designed the app with us.
+
+**Live demo:** [home-bakery-lovat.vercel.app/welcome](https://home-bakery-lovat.vercel.app/welcome) (sample data, anonymized customers)
 
 ## Features
 
-- **Order tracking** — every order in one list, with payment status. Orders from your website land automatically through a webhook; DM/text orders are added in seconds (paste the message and Claude structures it).
-- **Cost & profit per order** — a reusable ingredient + recipe library computes cost per item; the dashboard shows weekly revenue, Venmo fees, cost, and profit.
-- **Bake sheet** — exactly how many of each flavor to bake per pickup day, counting **paid orders only**. Flavors that share a base recipe are grouped and rounded up to whole batches (extras shown so you can sell them).
-- **Shopping list** — one aggregated list for the week in store units ("buy 2 × quart heavy cream"), with estimated cost.
-- **Pickup sheet** — per pickup slot: who's collecting what, paid status, tap-to-check-off.
+- **Bake sheet** — exactly how many of each flavor to bake per pickup day, counting **paid orders only**. Flavors that share a base recipe are grouped and rounded up to whole batches (extras shown so you can sell them), with a per-flavor ingredient breakdown and check-offs for baked flavors and packed orders.
+- **Insights** — weekly sales, cost, and profit trends, best sellers, orders by pickup place, and heads-ups when sales or margin swing.
+- **Cost & profit per order** — a reusable ingredient + recipe library computes cost per item; profit uses what actually reached your Venmo (after discounts and fees), not the list price.
+- **Order tracking** — every order in one list, with payment status. Orders from your website land automatically through a webhook; DM/text orders are added in seconds (paste the message and Claude structures it); existing sheets can be imported as CSV.
+- **Production plan** — the week as a timeline with check-offs and calendar reminders.
+- **Shopping list** — one aggregated list for the week in store units ("buy 2 × quart heavy cream"), with estimated cost and a restock forecast.
+- **Pickup sheet (Deliver)** — per pickup slot: who's collecting what, paid status, tap-to-check-off.
 - **Customer messaging** — bilingual (EN/中文) templates and Claude-drafted messages you copy into WeChat/SMS. The app never sends on your behalf.
 
-**AI features are optional.** Without an Anthropic API key everything works except the three Claude helpers (paste-an-order, message drafting, recipe import).
+**AI features are optional.** Without an Anthropic API key everything works except the three Claude helpers (paste-an-order, message drafting, recipe import). Claude handles messy human input (a WeChat DM, a free-text recipe) and drafts messages; all money and quantity math is plain code, and every AI result is a draft you confirm.
+
+## Current Status
+
+- **Working:** Bake sheet, Insights, costing, shopping list, plan, orders, Deliver, website order webhook, CSV import, Google Sheet view and write-back, Claude helpers.
+- **Concept:** onboarding connectors (Squarespace, Square Online, Instagram, Google Form, …) show the planned flow; the connections are not built yet. The Insights "Conversion & sources" panel uses sample data until order sources are tracked.
+- **Next:** pre-filling your menu from your website link, and matching Venmo payments to orders automatically (today you tap **Mark paid**).
 
 ## Tech Stack
 
@@ -29,20 +39,21 @@ Home bakers who want to stop losing money to untracked costs and stop losing ord
 
 ## Option 1: Try the Demo
 
-Ask us for the live demo link (deployed from this repo with Tart Theory's sample data). The demo resets periodically — don't enter real customer information.
+Open [home-bakery-lovat.vercel.app/welcome](https://home-bakery-lovat.vercel.app/welcome) (deployed from this repo with Tart Theory's sample data). The demo resets periodically — don't enter real customer information.
 
 ## Option 2: Deploy Your Own Copy (Recommended)
 
 Your own copy keeps your data private, and you control the costs.
 
-You'll need free accounts on: [GitHub](https://github.com/) · [Vercel](https://vercel.com/signup) · [Supabase](https://supabase.com/dashboard) · [Anthropic Console](https://console.anthropic.com/) (only for the AI features)
+About 30 minutes the first time. You'll need free accounts on: [GitHub](https://github.com/) · [Vercel](https://vercel.com/signup) · [Supabase](https://supabase.com/dashboard) · [Anthropic Console](https://console.anthropic.com/) (only for the AI features)
 
 ### Step 1: Create your database
 
 1. Log in to Supabase and click **New project**. Pick a name, set a database password, choose the region closest to you, and wait ~2 minutes for setup.
 2. Open the **SQL Editor**, paste the contents of [`supabase/schema.sql`](./supabase/schema.sql), and click **Run**. This creates the tables.
 3. *(Optional but recommended for a first look)* Run [`supabase/seed.sql`](./supabase/seed.sql) the same way — it loads a sample bakery (Tart Theory's menu and a week of test orders) so the app isn't empty. You can clear it later; to start blank instead, skip this step.
-4. Go to **Project Settings → API** and copy three values for the environment table below: **Project URL**, **anon public key**, and **service_role key** (keep that one secret, like a password).
+4. Go to **Project Settings → API** and copy three values for the environment table below: **Project URL**, **anon public key**, and **service_role key** (keep that one secret, like a password). If you don't see `anon` and `service_role`, look under the **Legacy API keys** tab.
+5. Go to **Authentication → Sign In / Providers → Email** and turn **off** "Confirm email". Otherwise the confirmation link points to the wrong address and you can't log in.
 
 ### Step 2: Get a Claude API key (optional)
 
@@ -55,9 +66,9 @@ Needed only for the AI features — everything else works without it.
 
 Click the button. It copies this project to your GitHub account and sets up hosting:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhoneychawla%2Fhome-bakery&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,ANTHROPIC_API_KEY&envDescription=See%20the%20README%20Environment%20Variables%20table&project-name=home-bakery)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhoneychawla%2Fhome-bakery&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY&envDescription=See%20the%20README%20Environment%20Variables%20table&project-name=preheat)
 
-When Vercel asks for environment variables, paste the values from this table:
+When Vercel asks for environment variables, paste the three Supabase values from this table. To turn on the AI features later, add `ANTHROPIC_API_KEY` in Vercel → **Settings → Environment Variables**, then **Redeploy**.
 
 ### Environment Variables
 
@@ -73,13 +84,13 @@ When Vercel asks for environment variables, paste the values from this table:
 
 ### Step 4: Create your baker account
 
-1. Open your new site, go to the login page, and click **"First time? Create the baker account"**.
-2. Sign up with your email and password — that's your account.
-3. Then, in Supabase → **Authentication → Sign In / Up**, turn **off** "Allow new users to sign up" so nobody else can register on your deployment.
+1. Open your new site and click **Sign up** (or **"First time? Create the baker account"** on the login page).
+2. Enter your bakery name, email, and password — that's your account.
+3. Then, in Supabase → **Authentication → Sign In / Providers**, turn **off** "Allow new users to sign up" so nobody else can register on your deployment.
 
 ### Step 5: Connect your website's order form (optional)
 
-If your website already takes orders (e.g. a form that posts to a Google Apps Script/Sheet), point it at your app instead — the **Settings** page shows your intake URL:
+If your website already takes orders (e.g. a form that posts to a Google Apps Script/Sheet), point it at your app instead — **Settings → Connect your website** shows your intake URL:
 
 ```
 POST https://<your-app>.vercel.app/api/intake
@@ -91,7 +102,7 @@ Content-Type: text/plain
 
 - Same-order retries are deduplicated by `orderNum`.
 - Live capacity for a week: `GET /api/intake?action=remaining&week=Oct%2030-31` → `{"ok":true,"orderedQty":42}`.
-- If you set `INTAKE_TOKEN`, append `?token=<your token>` to the URL.
+- If you set `INTAKE_TOKEN` (add it in Vercel and redeploy), append `?token=<your token>` to the URL.
 - Item names are matched against your menu, including alternate spellings (add aliases in the database's `product_aliases` table).
 
 ### Step 6: Keep your Google Sheet in sync (optional)
@@ -128,29 +139,36 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```
 ├── app/
-│   ├── (app)/            # Baker-facing pages (dashboard, orders, bake, shopping, …)
+│   ├── (app)/            # Baker-facing pages: home, products (Menu), insights, plan,
+│   │                     #   shopping, orders, bake, schedule (Deliver), settings
 │   ├── api/intake/       # Order webhook (website → app)
+│   ├── api/import/       # CSV import
 │   ├── api/ai/           # Claude helpers: parse-order, draft-message, parse-recipe
+│   ├── welcome/          # Marketing page
+│   ├── signup/           # Onboarding (account + order sources)
 │   └── login/
-├── components/           # Client components (forms, check-offs, composer)
-├── lib/                  # Domain logic: costing, bake sheet, shopping list, parsing
+├── components/           # Client components (forms, check-offs, composer, insights)
+├── lib/                  # Domain logic: costing, bake sheet, shopping list, restock, insights
 ├── scripts/
 │   └── sheet-writeback.gs # Apps Script: mirrors app changes into your Google Sheet
 ├── supabase/
 │   ├── schema.sql        # Database schema — run once in the SQL Editor
-│   └── seed.sql          # Sample bakery data (optional)
+│   └── seed.sql          # Sample bakery data (optional, anonymized)
 └── .env.example          # Environment variable template
 ```
 
 ## How the weekly flow works
 
-1. Orders arrive from your website (webhook) or you add DM orders by hand/with Claude.
+1. Orders arrive from your website (webhook) or you add DM orders by hand/with Claude in **Orders**.
 2. Customers pay you on Venmo; you tap **Mark paid** and enter the amount received (fees tracked automatically). **Only paid orders count** toward baking and shopping.
-3. Before shopping day: open **Shop** for the aggregated grocery list, **Bake** for per-day batch counts.
-4. On pickup day: open **Pickups**, check orders off as they're collected, copy reminder messages per customer.
-5. The dashboard shows the week's revenue, fees, cost, and profit the whole time.
+3. Before shopping day: open **Plan** for the week's timeline and **Shop** for the aggregated grocery list.
+4. On baking day: open **Bake** for per-day batch counts, and check flavors and orders off as you go.
+5. On pickup day: open **Deliver**, check orders off as they're collected, copy reminder messages per customer.
+6. **Home** shows this week at a glance; **Insights** shows how the business is trending week to week.
 
 ## Troubleshooting
+
+**I signed up but can't log in / the confirmation link is broken.** Turn off "Confirm email" in Supabase (Step 1.5) and sign up again. If the account already exists, delete it in **Authentication → Users** first.
 
 **The site loads but shows no data.** Check `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel, then redeploy.
 
@@ -159,6 +177,8 @@ Open [http://localhost:3000](http://localhost:3000).
 **My Supabase project is paused.** Free projects pause after inactivity. Open the Supabase dashboard and click **Restore**.
 
 **Webhook orders aren't appearing.** Test it yourself: `curl -X POST <your-app>/api/intake -d '{"orderNum":"TEST-1","items":"1x <exact menu item name> ($6)"}'`. If `unmatchedItems` is non-zero, the item name doesn't match your menu — add an alias.
+
+**Imported orders show 0 on Bake and Shop.** The CSV's item text must look like `2x Matcha Tart ($6); 1x Original Egg Tart ($5)` and match your menu's names. Fix names in **Menu** or add aliases.
 
 **Changes to environment variables don't take effect.** In Vercel, redeploy the latest deployment.
 
@@ -177,4 +197,4 @@ MIT
 
 ---
 
-Built with Claude for a small-business hackathon, piloted with Tart Theory.
+Built with Claude at the Seattle AI Week Claude Impact Lab Hackathon, piloted with Tart Theory.
