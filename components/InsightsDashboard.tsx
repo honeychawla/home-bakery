@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { summarize, weekStats, type InsightOrder } from "@/lib/insights";
-import { mockSources } from "@/lib/mockSources";
+import { mockSources, mockSourcesForWeek, PLATFORMS, type Platform } from "@/lib/mockSources";
 
 type MetricId = "sales" | "cost" | "profit" | "orders" | "tarts" | "unpaid";
 
@@ -188,7 +188,7 @@ export default function InsightsDashboard({ orders }: { orders: InsightOrder[] }
         />
       </section>
 
-      <SourcesPanel rows={mockSources(scope)} scopeLabel={selected ?? "all weeks"} />
+      <SourcesPanel weeks={weeks} selected={selected} onPickWeek={pickWeek} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-amber-100 bg-white p-4">
@@ -456,43 +456,104 @@ function WeekChart({
   );
 }
 
-// Where orders come from and where people drop off before paying.
+// Where orders come from and where people drop off before paying: inquiries,
+// paid orders and conversion per week, filterable by channel.
 // Currently driven by MOCK data (lib/mockSources.ts).
-function SourcesPanel({ rows, scopeLabel }: { rows: ReturnType<typeof mockSources>; scopeLabel: string }) {
-  const inquiries = rows.reduce((s, r) => s + r.inquiries, 0);
-  const paid = rows.reduce((s, r) => s + r.paid, 0);
-  const dropped = inquiries - paid;
+function SourcesPanel({
+  weeks,
+  selected,
+  onPickWeek,
+}: {
+  weeks: ReturnType<typeof weekStats>;
+  selected: string | null;
+  onPickWeek: (label: string | null) => void;
+}) {
+  const [channel, setChannel] = useState<Platform | null>(null);
+
+  const perWeek = weeks.map((w) => {
+    const rows = mockSourcesForWeek(w);
+    const picked = channel ? rows.filter((r) => r.platform === channel) : rows;
+    return {
+      label: w.label,
+      inquiries: picked.reduce((s, r) => s + r.inquiries, 0),
+      paid: picked.reduce((s, r) => s + r.paid, 0),
+    };
+  });
+
+  // KPIs and the channel breakdown follow the week filter; the chart always shows every week
+  const scopeRows = mockSources(selected ? weeks.filter((w) => w.label === selected) : weeks);
+  const shown = channel ? scopeRows.filter((r) => r.platform === channel) : scopeRows;
+  const inquiries = shown.reduce((s, r) => s + r.inquiries, 0);
+  const paid = shown.reduce((s, r) => s + r.paid, 0);
   const rate = inquiries ? (paid / inquiries) * 100 : 0;
-  const maxInq = Math.max(1, ...rows.map((r) => r.inquiries));
-  const sorted = [...rows].sort((a, b) => b.paid - a.paid);
-  const withData = rows.filter((r) => r.inquiries >= 5);
-  const best = [...withData].sort((a, b) => b.paid / b.inquiries - a.paid / a.inquiries)[0];
-  const biggestDrop = [...rows].sort((a, b) => b.inquiries - b.paid - (a.inquiries - a.paid))[0];
+  const totalPaid = scopeRows.reduce((s, r) => s + r.paid, 0);
+  const maxInq = Math.max(1, ...scopeRows.map((r) => r.inquiries));
+  const sorted = [...scopeRows].sort((a, b) => b.paid - a.paid);
+  const best = [...scopeRows.filter((r) => r.inquiries >= 5)].sort((a, b) => b.paid / b.inquiries - a.paid / a.inquiries)[0];
+  const biggestDrop = [...scopeRows].sort((a, b) => b.inquiries - b.paid - (a.inquiries - a.paid))[0];
 
   return (
     <section className="rounded-2xl border border-amber-100 bg-white p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-stone-600">
-          Conversion &amp; sources <span className="font-normal text-stone-400">· {scopeLabel}</span>
+          Conversion &amp; sources{" "}
+          <span className="font-normal text-stone-400">
+            · {channel ?? "all channels"} · {selected ?? "all weeks"}
+          </span>
         </h2>
-        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-500">
-          Sample data — real tracking not connected yet
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-500">
+            Sample data — real tracking not connected yet
+          </span>
+          <select
+            value={channel ?? ""}
+            onChange={(e) => setChannel((e.target.value || null) as Platform | null)}
+            aria-label="Channel"
+            className="rounded-lg border border-amber-200 bg-white py-1.5 pl-2.5 pr-2 text-sm text-stone-800"
+          >
+            <option value="">All channels</option>
+            {PLATFORMS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Mini label="Inquiries" value={String(inquiries)} sub="people who messaged" />
         <Mini label="Paid orders" value={String(paid)} sub="placed and paid" />
         <Mini label="Conversion" value={`${rate.toFixed(0)}%`} sub="inquiry → paid" highlight />
-        <Mini label="Never paid" value={String(dropped)} sub="inquired, no payment" />
+        <Mini label="Never paid" value={String(inquiries - paid)} sub="inquired, no payment" />
       </div>
 
-      <div className="mt-4 space-y-2.5">
+      <h3 className="mb-1 mt-5 text-xs font-bold text-stone-500">
+        Weekly inquiries vs paid orders <span className="font-normal text-stone-400">(% = conversion; click a week to filter)</span>
+      </h3>
+      <SourcesWeekChart weeks={perWeek} selected={selected} onPick={(l) => onPickWeek(selected === l ? null : l)} />
+      <div className="mt-1 flex gap-4 text-[11px] text-stone-500">
+        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-stone-300" />Inquiries</span>
+        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />Paid orders</span>
+      </div>
+
+      <h3 className="mb-2 mt-5 text-xs font-bold text-stone-500">
+        By channel <span className="font-normal text-stone-400">(click a channel to view it above)</span>
+      </h3>
+      <div className="space-y-1">
         {sorted.map((r) => {
           const conv = r.inquiries ? Math.round((r.paid / r.inquiries) * 100) : 0;
-          const share = paid ? Math.round((r.paid / paid) * 100) : 0;
+          const share = totalPaid ? Math.round((r.paid / totalPaid) * 100) : 0;
+          const on = channel === r.platform;
           return (
-            <div key={r.platform} className="grid grid-cols-[96px_1fr_auto] items-center gap-3 text-xs sm:grid-cols-[120px_1fr_auto]">
+            <button
+              key={r.platform}
+              onClick={() => setChannel(on ? null : r.platform)}
+              aria-pressed={on}
+              className={`grid w-full grid-cols-[96px_1fr_auto] items-center gap-3 rounded-lg px-2 py-1.5 text-left text-xs sm:grid-cols-[120px_1fr_auto] ${
+                on ? "bg-amber-100/70 ring-1 ring-amber-400" : "hover:bg-amber-50"
+              }`}
+            >
               <span className="text-right text-stone-600">{r.platform}</span>
               <span className="flex h-4 overflow-hidden rounded-sm bg-stone-50" title={`${r.paid} paid, ${r.inquiries - r.paid} never paid`}>
                 <span className="h-full bg-amber-500" style={{ width: `${(r.paid / maxInq) * 100}%` }} />
@@ -503,22 +564,121 @@ function SourcesPanel({ rows, scopeLabel }: { rows: ReturnType<typeof mockSource
                 <br />
                 {r.inquiries} inquiries · {conv}% convert
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
-      <div className="mt-3 flex gap-4 text-[11px] text-stone-500">
-        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />Paid</span>
-        <span className="inline-flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-stone-300" />Inquired, never paid</span>
-      </div>
 
-      {best && biggestDrop && (
+      {!channel && best && biggestDrop && (
         <p className="mt-3 border-t border-amber-50 pt-3 text-sm">
           <b>{best.platform}</b> converts best ({Math.round((best.paid / best.inquiries) * 100)}%).{" "}
           <b>{biggestDrop.platform}</b> has the most people who never paid ({biggestDrop.inquiries - biggestDrop.paid}) — worth a follow-up.
         </p>
       )}
     </section>
+  );
+}
+
+function SourcesWeekChart({
+  weeks,
+  selected,
+  onPick,
+}: {
+  weeks: { label: string; inquiries: number; paid: number }[];
+  selected: string | null;
+  onPick: (label: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(640);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+
+  const H = 220, top = 28, bottom = 28, left = 36, right = 8;
+  const plotH = H - top - bottom;
+  const slot = (width - left - right) / weeks.length;
+  const bw = Math.min(26, (slot - 8) / 2);
+  const step = niceStep(Math.max(1, ...weeks.map((w) => w.inquiries)) / 4);
+  const topVal = step * 4;
+  const short = weeks.length > 8 && width < 700;
+
+  return (
+    <div ref={ref} className="relative">
+      <svg width={width} height={H} role="img" aria-label="Weekly inquiries and paid orders">
+        {[0, 1, 2, 3, 4].map((t) => {
+          const y = top + plotH - (plotH * t * step) / topVal;
+          return (
+            <g key={t}>
+              <line x1={left} x2={width - right} y1={y} y2={y} stroke="#f3ead8" />
+              <text x={left - 6} y={y + 4} textAnchor="end" className="fill-stone-500 text-[11px]">
+                {t * step}
+              </text>
+            </g>
+          );
+        })}
+        {weeks.map((w, i) => {
+          const x0 = left + slot * i + (slot - bw * 2) / 2;
+          const dim = selected && selected !== w.label;
+          const conv = w.inquiries ? Math.round((w.paid / w.inquiries) * 100) : 0;
+          const bar = (v: number, j: number, cls: string) => {
+            const bh = Math.max(0, (plotH * v) / topVal);
+            return <rect key={j} x={x0 + bw * j + (j ? 1 : -1)} y={top + plotH - bh} width={bw - 1} height={bh} rx={3} className={cls} />;
+          };
+          const tallest = Math.max(w.inquiries, w.paid);
+          return (
+            <g key={w.label} opacity={dim ? 0.4 : 1}>
+              {bar(w.inquiries, 0, "fill-stone-300")}
+              {bar(w.paid, 1, "fill-amber-500")}
+              {slot > 30 && (
+                <text
+                  x={left + slot * i + slot / 2}
+                  y={top + plotH - (plotH * tallest) / topVal - 6}
+                  textAnchor="middle"
+                  className="fill-stone-800 text-[11px] font-semibold"
+                >
+                  {w.inquiries ? `${conv}%` : "–"}
+                </text>
+              )}
+              <text x={left + slot * i + slot / 2} y={H - 8} textAnchor="middle" className="fill-stone-500 text-[11px]">
+                {short ? w.label.replace(/-\d+$/, "") : w.label}
+              </text>
+              <rect
+                x={left + slot * i}
+                y={0}
+                width={slot}
+                height={H}
+                fill="transparent"
+                className="cursor-pointer"
+                onClick={() => onPick(w.label)}
+                onMouseMove={(e) => {
+                  const r = ref.current!.getBoundingClientRect();
+                  setTip({
+                    x: e.clientX - r.left,
+                    y: e.clientY - r.top,
+                    text: `${w.label}\nInquiries ${w.inquiries}\nPaid orders ${w.paid}\nNever paid ${w.inquiries - w.paid}\nConversion ${conv}%`,
+                  });
+                }}
+                onMouseLeave={() => setTip(null)}
+              />
+            </g>
+          );
+        })}
+      </svg>
+      {tip && (
+        <div
+          className="pointer-events-none absolute z-10 whitespace-pre rounded-lg border border-amber-100 bg-white px-2.5 py-2 text-xs shadow-lg"
+          style={{ left: Math.min(tip.x + 12, width - 150), top: tip.y + 12 }}
+        >
+          {tip.text}
+        </div>
+      )}
+    </div>
   );
 }
 
