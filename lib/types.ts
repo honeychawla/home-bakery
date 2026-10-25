@@ -92,6 +92,13 @@ export type MessageTemplate = {
   body_zh: string | null;
 };
 
+export type ShoppingCheckoff = {
+  week_label: string;
+  ingredient_id: string;
+  bought: boolean;
+  bought_at: string | null;
+};
+
 export type Settings = {
   id: number;
   bakery_name: string;

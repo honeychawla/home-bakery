@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
   Ingredient, MessageTemplate, Order, PickupSlot, Product, ProductIngredient,
-  RecipeGroup, Settings,
+  RecipeGroup, Settings, ShoppingCheckoff,
 } from "./types";
 import { weekLabelFor } from "./orders";
 
@@ -93,6 +93,15 @@ export async function getTemplates(): Promise<MessageTemplate[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("message_templates").select("*").order("name");
   return (data ?? []) as MessageTemplate[];
+}
+
+export async function getShoppingCheckoff(weekLabel: string): Promise<ShoppingCheckoff[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shopping_checkoff")
+    .select("*")
+    .eq("week_label", weekLabel);
+  return (data ?? []) as ShoppingCheckoff[];
 }
 
 export function currentWeekLabel(): string {

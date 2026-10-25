@@ -170,6 +170,14 @@ create table if not exists message_log (
   created_at timestamptz not null default now()
 );
 
+create table if not exists shopping_checkoff (
+  week_label text not null references weeks(week_label) on delete cascade,
+  ingredient_id uuid not null references ingredients(id) on delete cascade,
+  bought boolean not null default false,
+  bought_at timestamptz,
+  primary key (week_label, ingredient_id)
+);
+
 -- ============ Row Level Security ============
 -- Single-tenant: any authenticated user (the baker) has full access.
 -- The anon key can read/write nothing; the webhook intake runs server-side
@@ -181,7 +189,7 @@ begin
   foreach t in array array[
     'settings','recipe_groups','products','product_aliases','ingredients',
     'product_ingredients','pickup_locations','pickup_slots','customers',
-    'orders','order_items','weeks','message_templates','message_log'
+    'orders','order_items','weeks','message_templates','message_log','shopping_checkoff'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists baker_all on %I', t);
