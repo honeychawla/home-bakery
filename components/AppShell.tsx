@@ -13,6 +13,7 @@ const NAV = [
   { href: "/bake", label: "Bake" },
   { href: "/schedule", label: "Deliver" },
   { href: "/products", label: "Menu" },
+  { href: "/insights", label: "Insights" },
 ];
 
 // Grouped for the sidebar: overview, then the workflow in order, then catalog.
