@@ -10,6 +10,19 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* PALETTE PREVIEW (local only, not pushed): remap the amber scale the app
+     already uses everywhere to the new white + retro-red accent palette. */
+  --color-amber-50: #fbf6f3;
+  --color-amber-100: #f6e4e0;
+  --color-amber-200: #ece5de;
+  --color-amber-300: #e0c3ba;
+  --color-amber-400: #c77a63;
+  --color-amber-500: #a3321f;
+  --color-amber-600: #8c2a19;
+  --color-amber-700: #742214;
+  --color-amber-800: #5c1b10;
+  --color-amber-900: #3a140c;
 }
 
 @media (prefers-color-scheme: dark) {
