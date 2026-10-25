@@ -103,7 +103,7 @@ export default function SignupPage() {
                   Website or social link <span className="font-normal text-stone-400">(optional)</span>
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   inputMode="url"
                   placeholder="e.g. tart-theory.com or instagram.com/yourbakery"
                   value={websiteUrl}
