@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Refreshes the Supabase session cookie and gates the app behind login.
-// The intake webhook and login page stay public.
+// The intake webhook, login page, and marketing/signup flow stay public.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -33,7 +33,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isPublic =
-    pathname.startsWith("/login") || pathname.startsWith("/api/intake");
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/welcome") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/api/intake");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
