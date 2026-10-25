@@ -31,16 +31,15 @@ export default function WelcomePage() {
               For home bakers taking preorders
             </span>
             <h1 className="mt-5 text-6xl font-extrabold leading-[0.95] tracking-tight">
-              Run your
+              Spend your time
               <br />
-              bake business
+              baking.
               <br />
-              like clockwork.
+              Not managing orders.
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-stone-500">
-              Preheat turns scattered DMs, spreadsheets, and payment screenshots into one place:
-              orders, bake totals, shopping lists, and pickup day — sorted before you ever turn on
-              the oven.
+              Order management built for how home bakers actually work: preorders, group chats,
+              and Saturday pickups.
             </p>
             <div className="mt-8 flex items-center gap-4">
               <Link
@@ -77,7 +76,7 @@ export default function WelcomePage() {
 
         <div className="mt-24 rounded-[2.5rem] bg-[#241a16] px-10 py-16 text-center text-white">
           <h2 className="text-4xl font-extrabold tracking-tight">
-            Stop juggling DMs and spreadsheets.
+            Do what you love. Preheat does the rest.
           </h2>
           <p className="mx-auto mt-3 max-w-md text-stone-300">
             Preheat is free to start — built by a baker, for bakers.
