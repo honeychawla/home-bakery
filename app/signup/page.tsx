@@ -16,26 +16,25 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [platform, setPlatform] = useState<string | null>(null);
   const [storeUrl, setStoreUrl] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const stepNumber = { account: 1, platform: 2, connect: 3, connecting: 3, connected: 3, manual: 3, done: 4 }[step];
 
   async function submitAccount(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setBusy(true);
+    // Demo mode: always proceed to the next step regardless of whether the
+    // real signup/save succeeds — no validation blocks the walkthrough.
     const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({ email, password });
-    setBusy(false);
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
+    try {
+      if (email && password) {
+        await supabase.auth.signUp({ email, password });
+      }
+      await supabase.from("settings").update({ bakery_name: bakeryName || "My Bakery" }).eq("id", 1);
+    } catch {
+      // ignored — this is a demo flow, not a gate
     }
-    // Best-effort: save the bakery name now; harmless if the session isn't
-    // active yet (e.g. email confirmation pending) — the owner can also set
-    // it from Settings later.
-    await supabase.from("settings").update({ bakery_name: bakeryName || "My Bakery" }).eq("id", 1);
+    setBusy(false);
     setStep("platform");
   }
 
@@ -87,7 +86,6 @@ export default function SignupPage() {
                 <label className="text-xs font-semibold text-stone-500">Bakery name</label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. Tart Theory"
                   value={bakeryName}
                   onChange={(e) => setBakeryName(e.target.value)}
@@ -97,8 +95,7 @@ export default function SignupPage() {
               <div>
                 <label className="text-xs font-semibold text-stone-500">Email</label>
                 <input
-                  type="email"
-                  required
+                  type="text"
                   placeholder="you@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -109,15 +106,12 @@ export default function SignupPage() {
                 <label className="text-xs font-semibold text-stone-500">Password</label>
                 <input
                   type="password"
-                  required
-                  minLength={6}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3321f]/30"
                 />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
               <button
                 type="submit"
                 disabled={busy}
