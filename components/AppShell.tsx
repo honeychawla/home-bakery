@@ -12,6 +12,7 @@ const NAV = [
   { href: "/bake", label: "Bake", icon: "🥧" },
   { href: "/schedule", label: "Deliver", icon: "📍" },
   { href: "/products", label: "Menu", icon: "📋" },
+  { href: "/insights", label: "Insights", icon: "📈" },
 ];
 
 export default function AppShell({
