@@ -74,6 +74,110 @@ export default function WelcomePage() {
           </div>
         </div>
 
+        <section className="mt-28">
+          <h2 className="text-center text-4xl font-extrabold tracking-tight">How it works</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-stone-500">
+            Two things happen, in this order.
+          </p>
+
+          {/* Step 1 */}
+          <div className="mt-14 grid items-center gap-10 sm:grid-cols-2">
+            <div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#a3321f] text-sm font-bold text-white">
+                1
+              </span>
+              <h3 className="mt-4 text-2xl font-extrabold">Pull all your orders into one place</h3>
+              <p className="mt-3 leading-relaxed text-stone-500">
+                You&apos;re probably already taking orders somewhere — Squarespace, Instagram,
+                WeChat, a group chat, a Google Form. You don&apos;t switch any of that. Preheat
+                connects to where you already sell and reads new orders in automatically, so
+                nothing gets copied by hand and nothing falls through the cracks.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+                <span className="rounded-full bg-[#f3ede8] px-3 py-1 text-stone-500">Squarespace</span>
+                <span className="rounded-full bg-[#f3ede8] px-3 py-1 text-stone-500">Instagram / WeChat</span>
+                <span className="rounded-full bg-[#f3ede8] px-3 py-1 text-stone-500">Google Sheet / CSV</span>
+                <span className="rounded-full bg-[#f3ede8] px-3 py-1 text-stone-500">Square Online</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-stone-200 bg-[#faf8f6] p-6">
+              <div className="flex items-center justify-between rounded-xl bg-white p-3 text-sm shadow-sm">
+                <span className="font-semibold">Squarespace</span>
+                <span className="rounded-full bg-[#e5efe6] px-2 py-0.5 text-xs font-bold text-[#4f7a5c]">
+                  Connected
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between rounded-xl bg-white p-3 text-sm shadow-sm">
+                <span className="font-semibold">Instagram DMs</span>
+                <span className="rounded-full bg-[#faefdd] px-2 py-0.5 text-xs font-bold text-[#c8872f]">
+                  Manual entry
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between rounded-xl bg-white p-3 text-sm shadow-sm">
+                <span className="font-semibold">WeChat group</span>
+                <span className="rounded-full bg-[#faefdd] px-2 py-0.5 text-xs font-bold text-[#c8872f]">
+                  Manual entry
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="mt-20 grid items-center gap-10 sm:grid-cols-2">
+            <div className="order-2 rounded-2xl border border-stone-200 bg-[#faf8f6] p-6 sm:order-1">
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-stone-500">This week</p>
+                <p className="mt-1 text-2xl font-extrabold">38 tarts, 10 orders</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-[#f6e4e0] p-2 font-semibold text-[#a3321f]">22 to buy</div>
+                  <div className="rounded-lg bg-[#e5efe6] p-2 font-semibold text-[#4f7a5c]">6 flavors to bake</div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 sm:order-2">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#a3321f] text-sm font-bold text-white">
+                2
+              </span>
+              <h3 className="mt-4 text-2xl font-extrabold">Preheat takes care of everything else</h3>
+              <p className="mt-3 leading-relaxed text-stone-500">
+                You didn&apos;t start baking to manage spreadsheets. Once orders are in, Preheat
+                turns them into the actual work of the week — so the only thing left for you to
+                think about is the baking itself:
+              </p>
+              <ul className="mt-4 space-y-2.5 text-sm">
+                <li className="flex gap-2">
+                  <span className="font-bold text-[#a3321f]">·</span>
+                  <span>
+                    <b>What to bake</b> — totals by flavor, plus the recipe scaled to exact grams
+                    for each one.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold text-[#a3321f]">·</span>
+                  <span>
+                    <b>What to buy</b> — a shopping list built from real demand, with restock
+                    reminders before you run out.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold text-[#a3321f]">·</span>
+                  <span>
+                    <b>When it happens</b> — a production timeline from preorder close to pickup
+                    day.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold text-[#a3321f]">·</span>
+                  <span>
+                    <b>What&apos;s ready to go</b> — a pickup checklist so nothing goes out the
+                    door twice.
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <div className="mt-24 rounded-[2.5rem] bg-[#241a16] px-10 py-16 text-center text-white">
           <h2 className="text-4xl font-extrabold tracking-tight">
             Do what you love. Preheat does the rest.
