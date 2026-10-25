@@ -3,6 +3,7 @@
 
 begin;
 
+delete from plan_checks; delete from plan_steps;
 delete from message_log; delete from message_templates;
 delete from order_items; delete from orders; delete from customers;
 delete from weeks;
@@ -116,6 +117,13 @@ insert into pickup_slots (day_of_week, start_time, end_time, location_id, cutoff
   (5, '15:30', '16:00', (select id from pickup_locations where label_en like 'Timeless Tea%'), 21),
   (5, '16:30', '17:00', (select id from pickup_locations where label_en like 'SLU Nitro%'), 21),
   (6, '15:00', '15:30', (select id from pickup_locations where label_en like 'Bellevue%'), 21);
+
+-- ============ Weekly production plan (custom steps) ============
+insert into plan_steps (title, day_of_week, at_time, notes, sort_order) values
+  ('Post preorder link', 2, '10:00', 'Instagram, WeChat, Xiaohongshu + website menu update', 1),
+  ('Review orders & chase payments', 4, '09:00', 'Confirm Venmo screenshots, follow up unpaid orders', 2),
+  ('Grocery run — all ingredients in', 4, '15:00', 'Use the Shop checklist', 3),
+  ('Prep components', 4, '20:00', 'Mochi balls, lychee cream cheese mix, taro paste, purple rice', 4);
 
 -- ============ Message templates ============
 insert into message_templates (name, body_en, body_zh) values
