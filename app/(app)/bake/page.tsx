@@ -63,6 +63,12 @@ export default async function BakePage({
       {days.map((day) => {
         const groups = sheet.get(day)!;
         const dayTotal = groups.reduce((s, g) => s + g.totalUnits, 0);
+        const dayOrders = orders.filter(
+          (o) =>
+            (o.pickup_day ?? "Unscheduled") === day &&
+            o.payment_status === "paid" &&
+            o.status !== "cancelled"
+        );
         return (
           <section key={day} className="rounded-2xl border border-amber-100 bg-white p-5 print:break-inside-avoid print:border-stone-300">
             <div className="flex items-baseline justify-between">
@@ -103,6 +109,48 @@ export default async function BakePage({
                 </div>
               ))}
             </div>
+
+            {/* Per-order breakdown: the bake totals say how much to produce;
+                this says how to assemble and package each customer's order. */}
+            {dayOrders.length > 0 && (
+              <div className="mt-5 border-t border-amber-100 pt-4">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">
+                  Assemble & pack — {dayOrders.length} orders
+                </h3>
+                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {dayOrders.map((o) => (
+                    <li
+                      key={o.id}
+                      className="rounded-xl border border-amber-100 bg-amber-50/40 p-3 text-sm print:break-inside-avoid print:border-stone-300"
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-semibold">{o.venmo_name ?? o.order_num}</span>
+                        <span className="text-xs text-stone-400">
+                          {o.order_num} · {o.pickup_time ?? ""}
+                        </span>
+                      </div>
+                      <ul className="mt-1 space-y-0.5 text-stone-700">
+                        {(o.order_items ?? []).map((i) => (
+                          <li key={i.id} className="flex justify-between">
+                            <span>
+                              {i.description
+                                .replace(/^\d+x\s*/i, "")
+                                .replace(/\s*\(\$[\d.]+\)$/, "")}
+                            </span>
+                            <span className="font-bold tabular-nums">×{i.qty}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {o.notes && (
+                        <p className="mt-1.5 rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-900">
+                          📦 {o.notes}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         );
       })}
