@@ -204,6 +204,15 @@ create table if not exists shopping_checks (
   primary key (week_label, ingredient_id)
 );
 
+-- Bake-day check-offs: which flavors are done baking, per pickup day.
+create table if not exists bake_checks (
+  week_label text not null,
+  day text not null,
+  product_id uuid not null references products(id) on delete cascade,
+  checked_at timestamptz not null default now(),
+  primary key (week_label, day, product_id)
+);
+
 -- ============ Row Level Security ============
 -- Single-tenant: any authenticated user (the baker) has full access.
 -- The anon key can read/write nothing; the webhook intake runs server-side
@@ -216,7 +225,7 @@ begin
     'settings','recipe_groups','products','product_aliases','ingredients',
     'product_ingredients','pickup_locations','pickup_slots','customers',
     'orders','order_items','weeks','message_templates','message_log',
-    'shopping_checks','plan_steps','plan_checks'
+    'shopping_checks','plan_steps','plan_checks','bake_checks'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists baker_all on %I', t);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PrintButton from "@/components/PrintButton";
-import RecipeRow from "@/components/RecipeRow";
+import BakeDay from "@/components/BakeDay";
+import { createClient } from "@/lib/supabase/server";
 import { getCatalog, getOrders, getWeekLabels } from "@/lib/data";
 import { bakeSheet, recipeForQty } from "@/lib/costing";
 
@@ -48,6 +49,17 @@ export default async function BakePage({
     }
   }
   const topFlavors = [...flavorTotals.entries()].sort((a, b) => b[1] - a[1]);
+
+  const supabase = await createClient();
+  const { data: bakeChecks } = await supabase
+    .from("bake_checks")
+    .select("day, product_id")
+    .eq("week_label", activeWeek);
+  const bakedByDay = new Map<string, string[]>();
+  for (const c of bakeChecks ?? []) {
+    if (!bakedByDay.has(c.day)) bakedByDay.set(c.day, []);
+    bakedByDay.get(c.day)!.push(c.product_id);
+  }
 
   return (
     <div className="space-y-5">
@@ -145,80 +157,25 @@ export default async function BakePage({
             o.status !== "cancelled"
         );
         return (
-          <section key={day} className="rounded-2xl border border-amber-100 bg-white p-5 print:break-inside-avoid print:border-stone-300">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-bold">{day}</h2>
-              <span className="text-sm text-stone-500">{dayTotal} tarts</span>
-            </div>
-            <div className="mt-3 space-y-4">
-              {groups.map((g, idx) => (
-                <div key={idx}>
-                  {g.group ? (
-                    <p className="text-xs font-bold uppercase tracking-wide text-amber-700">
-                      {g.group.name} — {g.totalUnits} tarts
-                    </p>
-                  ) : (
-                    <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
-                      Individual recipes
-                    </p>
-                  )}
-                  <ul className="mt-1 divide-y divide-amber-50">
-                    {g.lines.map((l) => (
-                      <RecipeRow
-                        key={l.product.id}
-                        nameEn={l.product.name_en}
-                        nameZh={l.product.name_zh}
-                        qty={l.qty}
-                        ingredients={recipeForQty(l.product, l.qty, catalog.recipeLines, ingredientsById)}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            {/* Per-order breakdown: the bake totals say how much to produce;
-                this says how to assemble and package each customer's order. */}
-            {dayOrders.length > 0 && (
-              <div className="mt-5 border-t border-amber-100 pt-4">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">
-                  Assemble & pack — {dayOrders.length} orders
-                </h3>
-                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {dayOrders.map((o) => (
-                    <li
-                      key={o.id}
-                      className="rounded-xl border border-amber-100 bg-amber-50/40 p-3 text-sm print:break-inside-avoid print:border-stone-300"
-                    >
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-semibold">{o.venmo_name ?? o.order_num}</span>
-                        <span className="text-xs text-stone-400">
-                          {o.order_num} · {o.pickup_time ?? ""}
-                        </span>
-                      </div>
-                      <ul className="mt-1 space-y-0.5 text-stone-700">
-                        {(o.order_items ?? []).map((i) => (
-                          <li key={i.id} className="flex justify-between">
-                            <span>
-                              {i.description
-                                .replace(/^\d+x\s*/i, "")
-                                .replace(/\s*\(\$[\d.]+\)$/, "")}
-                            </span>
-                            <span className="font-bold tabular-nums">×{i.qty}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {o.notes && (
-                        <p className="mt-1.5 rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-900">
-                          📦 {o.notes}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
+          <BakeDay
+            key={day}
+            weekLabel={activeWeek}
+            day={day}
+            dayTotal={dayTotal}
+            orders={dayOrders}
+            initialBakedProductIds={bakedByDay.get(day) ?? []}
+            groups={groups.map((g) => ({
+              groupName: g.group?.name ?? null,
+              totalUnits: g.totalUnits,
+              lines: g.lines.map((l) => ({
+                productId: l.product.id,
+                nameEn: l.product.name_en,
+                nameZh: l.product.name_zh,
+                qty: l.qty,
+                ingredients: recipeForQty(l.product, l.qty, catalog.recipeLines, ingredientsById),
+              })),
+            }))}
+          />
         );
       })}
     </div>
