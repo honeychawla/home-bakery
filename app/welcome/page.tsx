@@ -10,13 +10,8 @@ export default function WelcomePage() {
       <header className="border-b border-stone-100">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="text-lg font-extrabold tracking-tight">Preheat</span>
-          <nav className="hidden gap-8 text-sm font-medium text-stone-500 sm:flex">
-            <span>How it works</span>
-            <span>Pricing</span>
-            <span>FAQ</span>
-          </nav>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-stone-500">
+            <Link href="/signup" className="text-sm font-medium text-stone-500">
               Sign in
             </Link>
             <Link
@@ -54,9 +49,6 @@ export default function WelcomePage() {
               >
                 Get started free
               </Link>
-              <span className="text-sm font-medium text-stone-500 underline">
-                See how it works →
-              </span>
             </div>
             <p className="mt-4 text-xs text-stone-400">
               No credit card needed · set up in 10 minutes
