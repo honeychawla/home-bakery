@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-white text-stone-900">
+    <div className="min-h-screen bg-white text-stone-900 [color-scheme:light]">
       <header className="border-b border-stone-100">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="text-lg font-extrabold tracking-tight">Preheat</span>

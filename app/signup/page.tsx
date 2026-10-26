@@ -211,6 +211,7 @@ export default function SignupPage() {
   }
 
   return (
+    <div className="min-h-screen bg-white text-stone-900 [color-scheme:light]">
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-6 py-10">
       <div className="flex items-center justify-between">
         <span className="text-base font-extrabold tracking-tight">Preheat</span>
@@ -368,6 +369,7 @@ export default function SignupPage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
