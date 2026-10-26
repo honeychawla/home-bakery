@@ -32,6 +32,21 @@ That's why Preheat keeps every number in plain code, uses Claude only for messy 
 
 **AI features are optional.** Without an Anthropic API key everything works except the three Claude helpers (paste-an-order, message drafting, recipe import). Claude handles messy human input (a WeChat DM, a free-text recipe) and drafts messages; all money and quantity math is plain code, and every AI result is a draft you confirm.
 
+## How Preheat Is Different
+
+- **Built with a real bakery, on real data.** Tart Theory's owner brought her actual order and cost sheets, demoed her weekly routine, tested every version, and designed the UI herself. Every feature traces back to a problem she has every week.
+- **Onboarding that meets bakers where they already sell.** Most tools ask bakers to move their sales to a new platform. Preheat starts with "Where do people find and order from you?" and lets bakers list every channel they use. Today, a Google Sheet link shows the sheet inside Preheat and leads straight to CSV import, and the bakery's existing website order format is accepted as-is. One-click connectors for Squarespace, Square, Instagram and WeChat are designed and next.
+- **From orders to the oven.** Costing tools know recipes; order tools know orders. Preheat connects the two, so the week's paid orders turn directly into what to bake, what to buy, and what you actually earned after discounts and Venmo fees.
+- **AI where it helps, code where it must be right.** Claude reads messy input (a WeChat DM in Chinese, a free-text recipe) and drafts bilingual messages. Every number is plain code, and the baker confirms every AI result.
+- **Free to run.** Open source and runs on free tiers, with no per-order fees or monthly subscription.
+
+| | Preorder storefronts (e.g. Hotplate) | Costing tools (e.g. Craftybase, CakeBoss) | **Preheat** |
+|---|---|---|---|
+| Keep your existing website and sheet | ❌ Move sales to their storefront | ⚠️ Re-enter orders | ✅ Accepts your site's orders; syncs your sheet |
+| Orders → what to bake and buy | ⚠️ Order lists | ⚠️ Separate from orders | ✅ Batches, grams and a shopping list |
+| Real profit per order | ❌ | ⚠️ Cost per item | ✅ After discounts and Venmo fees |
+| Cost | Per-order fee | Monthly subscription | Free on free tiers |
+
 ## Current Status
 
 - **Working:** Bake sheet, Insights, costing, shopping list, plan, orders, Deliver, website order webhook, CSV import, Google Sheet view and write-back, Claude helpers.
